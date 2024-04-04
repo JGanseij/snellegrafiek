@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chart Creator</title>
+  <link rel="stylesheet" type="text/css" href="/Users/jeroenganseij/Desktop/Code_for_clients/Manon/claude/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Chart Creator</h1>
+    <form id="chartForm">
+      <div class="form-group">
+        <label for="chartTitle">Chart Title:</label>
+        <input type="text" id="chartTitle" name="chartTitle" required>
+      </div>
+      <div class="form-group">
+        <label for="chartType">Chart Type:</label>
+        <select id="chartType" name="chartType">
+          <option value="bar">Bar Chart</option>
+          <option value="line">Line Chart</option>
+          <option value="combined">Combined Chart</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="labelsInput">Labels (comma-separated):</label>
+        <input type="text" id="labelsInput" name="labelsInput" required>
+      </div>
+      <div class="form-group">
+        <label for="barDataName">Bar Data Name:</label>
+        <input type="text" id="barDataName" name="barDataName" required>
+      </div>
+      <div class="form-group">
+        <label for="dataInput">Bar Data (comma-separated):</label>
+        <input type="text" id="dataInput" name="dataInput" required>
+      </div>
+      <div class="form-group">
+        <label for="lineDataName">Line Data Name:</label>
+        <input type="text" id="lineDataName" name="lineDataName">
+      </div>
+      <div class="form-group">
+        <label for="lineDataInput">Line Data (comma-separated):</label>
+        <input type="text" id="lineDataInput" name="lineDataInput">
+      </div>
+      <button type="submit" class="btn btn-primary">Create Chart</button>
+    </form>
+    <div id="chartContainer"></div>
+    <button id="printButton" class="btn btn-secondary">Print Chart</button>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+  <script src="script.js"></script>
+</body>
+</html>
