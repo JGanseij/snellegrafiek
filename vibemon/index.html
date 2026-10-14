@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vibemon Groene Editie</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<style>
+/* Layout: one handheld console, centered; the LCD is the hero, controls below it. Single deliberate look. */
+:root {
+  --room: #2c3a31;
+  --room-text: #cfdcc6;
+  --shell: #cbc7bf;
+  --shell-shade: #a9a49b;
+  --bezel: #5f5e6b;
+  --bezel-text: #c9cad6;
+  --lcd: #e0f8d0;
+  --ink: #2c2a63;
+  --btn: #9a1f4b;
+  --btn-shade: #6e1435;
+  --dpad: #26262b;
+  --led: #e2333f;
+  --pixel: 'Press Start 2P', 'Courier New', monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--room);
+  color: var(--room-text);
+  font-family: var(--pixel);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-block: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.gb {
+  width: min(380px, 100%);
+  background: var(--shell);
+  border-radius: 12px 12px 60px 12px;
+  padding: 18px 18px 26px;
+  box-sizing: border-box;
+  box-shadow: inset -5px -7px 0 var(--shell-shade), 0 24px 48px rgba(0,0,0,.4);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bezel {
+  background: var(--bezel);
+  border-radius: 8px 8px 36px 8px;
+  padding: 10px 22px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bezel-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 6px;
+  letter-spacing: .08em;
+  color: var(--bezel-text);
+}
+.bezel-top::before, .bezel-top::after { content: ""; flex: 1; height: 2px; background: var(--btn); box-shadow: 0 4px 0 var(--ink); }
+.screen-row { display: flex; align-items: center; gap: 10px; }
+.led { width: 7px; height: 7px; border-radius: 50%; background: #3a1418; flex: none; }
+.led.on { background: var(--led); box-shadow: 0 0 6px var(--led); }
+canvas {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 160 / 144;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: var(--lcd);
+}
+.brand { font-size: 13px; color: var(--ink); font-style: italic; letter-spacing: .02em; }
+.brand small { font-size: 8px; font-style: normal; margin-left: 4px; }
+.controls { display: flex; justify-content: space-between; align-items: center; padding-top: 4px; }
+.dpad { display: grid; grid-template-columns: repeat(3, 38px); grid-template-rows: repeat(3, 38px); }
+.dpad button { background: var(--dpad); border: 0; padding: 0; touch-action: none; cursor: pointer; }
+.dpad .u { grid-area: 1 / 2; border-radius: 4px 4px 0 0; }
+.dpad .l { grid-area: 2 / 1; border-radius: 4px 0 0 4px; }
+.dpad .c { grid-area: 2 / 2; background: var(--dpad); pointer-events: none; }
+.dpad .r { grid-area: 2 / 3; border-radius: 0 4px 4px 0; }
+.dpad .d { grid-area: 3 / 2; border-radius: 0 0 4px 4px; }
+.ab { display: flex; gap: 14px; transform: rotate(-25deg); }
+.ab div { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 9px; color: var(--ink); }
+.ab button {
+  width: 50px; height: 50px; border-radius: 50%; border: 0;
+  background: var(--btn); box-shadow: inset -3px -4px 0 var(--btn-shade);
+  touch-action: none; cursor: pointer;
+}
+.ab .a { margin-top: -26px; }
+.ss { display: flex; justify-content: center; gap: 22px; }
+.ss div { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 7px; color: var(--ink); letter-spacing: .06em; }
+.ss button { width: 46px; height: 12px; border-radius: 6px; border: 0; background: var(--bezel); transform: rotate(-25deg); touch-action: none; cursor: pointer; }
+button:active, button.down { filter: brightness(1.35); }
+button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.help { max-width: 380px; font-size: 8px; line-height: 2; text-align: center; margin: 0; color: var(--room-text); opacity: .85; }
+.help b { color: #fff; font-weight: normal; }
+</style>
+</head>
+<body>
+<div class="gb">
+  <div class="bezel">
+    <div class="bezel-top">VIBE MATRIX · STEREO BLIEP</div>
+    <div class="screen-row">
+      <span class="led" id="led" title="Geluid"></span>
+      <canvas id="screen" width="640" height="576" aria-label="Vibemon spelscherm"></canvas>
+    </div>
+  </div>
+  <div class="brand">Vibe Boy<small>GROEN</small></div>
+  <div class="controls">
+    <div class="dpad">
+      <button class="u" data-k="up" aria-label="Omhoog"></button>
+      <button class="l" data-k="left" aria-label="Links"></button>
+      <span class="c"></span>
+      <button class="r" data-k="right" aria-label="Rechts"></button>
+      <button class="d" data-k="down" aria-label="Omlaag"></button>
+    </div>
+    <div class="ab">
+      <div><button data-k="b" aria-label="B-knop"></button>B</div>
+      <div class="a"><button data-k="a" aria-label="A-knop"></button>A</div>
+    </div>
+  </div>
+  <div class="ss">
+    <div><button data-k="select" id="selectBtn" aria-label="Select: geluid aan of uit"></button>SELECT</div>
+    <div><button data-k="start" aria-label="Start"></button>START</div>
+  </div>
+</div>
+<p class="help"><b>Pijltjes/WASD</b> lopen · <b>Z/Spatie</b> A · <b>X</b> B · <b>Enter</b> Start · <b>M</b> geluid</p>
+
+<script>
+'use strict';
+/* =========================================================
+   VIBEMON - GROENE EDITIE
+   Een klein Game Boy-achtig monsterspel. Alles wordt in code
+   getekend; er worden geen afbeeldingen geladen.
+   ========================================================= */
+
+const PAL = ['#e0f8d0', '#88c070', '#346856', '#081820'];
+const RGB = PAL.map(h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)));
+const cv = document.getElementById('screen');
+const ctx = cv.getContext('2d');
+const SC = cv.width / 160;
+const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+const rnd = Math.random;
+
+/* ---------- pixel art helpers ---------- */
+function canvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+function helpers(g) {
+  return {
+    g,
+    R(x, y, w, h, i) { g.fillStyle = PAL[i]; g.fillRect(x, y, w, h); },
+    E(x, y, rx, ry, i) { g.fillStyle = PAL[i]; g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); g.fill(); },
+    P(p, i) { g.fillStyle = PAL[i]; g.beginPath(); g.moveTo(p[0], p[1]); for (let k = 2; k < p.length; k += 2) g.lineTo(p[k], p[k + 1]); g.closePath(); g.fill(); },
+    clipE(x, y, rx, ry, fn) { g.save(); g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); g.clip(); fn(); g.restore(); },
+    top(x, y, r, i) { g.fillStyle = PAL[i]; g.beginPath(); g.arc(x, y, r, Math.PI, 0); g.closePath(); g.fill(); }
+  };
+}
+// snap every pixel to the 4-colour palette and add a dark outline
+function crisp(c, outline) {
+  const g = c.getContext('2d'), w = c.width, h = c.height, img = g.getImageData(0, 0, w, h), d = img.data;
+  const ix = new Int8Array(w * h);
+  for (let p = 0; p < w * h; p++) {
+    if (d[p * 4 + 3] < 120) { ix[p] = -1; continue; }
+    let best = 0, bd = 1e9;
+    for (let k = 0; k < 4; k++) {
+      const dr = d[p * 4] - RGB[k][0], dg = d[p * 4 + 1] - RGB[k][1], db = d[p * 4 + 2] - RGB[k][2];
+      const dd = dr * dr + dg * dg + db * db;
+      if (dd < bd) { bd = dd; best = k; }
+    }
+    ix[p] = best;
+  }
+  if (outline) {
+    const o = ix.slice();
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const p = y * w + x;
+      if (ix[p] !== -1) continue;
+      if ((x > 0 && ix[p - 1] >= 0) || (x < w - 1 && ix[p + 1] >= 0) || (y > 0 && ix[p - w] >= 0) || (y < h - 1 && ix[p + w] >= 0)) o[p] = 3;
+    }
+    ix.set(o);
+  }
+  for (let p = 0; p < w * h; p++) {
+    const k = ix[p];
+    if (k < 0) d[p * 4 + 3] = 0;
+    else { d[p * 4] = RGB[k][0]; d[p * 4 + 1] = RGB[k][1]; d[p * 4 + 2] = RGB[k][2]; d[p * 4 + 3] = 255; }
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+function art(w, h, fn, outline = true) { const c = canvas(w, h); fn(helpers(c.getContext('2d'))); return crisp(c, outline); }
+function flip(c) { const n = canvas(c.width, c.height), g = n.getContext('2d'); g.scale(-1, 1); g.drawImage(c, -c.width, 0); return n; }
+
+/* ---------- types, moves, species ---------- */
+const EFF = {
+  VUUR: { PLANT: 2, WATER: .5, STEEN: .5, VUUR: .5 },
+  WATER: { VUUR: 2, STEEN: 2, PLANT: .5, WATER: .5 },
+  PLANT: { WATER: 2, STEEN: 2, VUUR: .5, PLANT: .5, VLIEG: .5 },
+  ELEKTRO: { WATER: 2, VLIEG: 2, PLANT: .5, ELEKTRO: .5, STEEN: .5 },
+  STEEN: { VUUR: 2, VLIEG: 2 },
+  VLIEG: { PLANT: 2, STEEN: .5, ELEKTRO: .5 },
+  NORMAAL: { STEEN: .5 }
+};
+const eff = (a, d) => (EFF[a] && EFF[a][d]) || 1;
+
+const MOVES = {
+  kras: { name: 'KRAS', type: 'NORMAAL', pow: 40, acc: 100, pp: 35 },
+  beuk: { name: 'BEUK', type: 'NORMAAL', pow: 40, acc: 100, pp: 35 },
+  hap: { name: 'HAP', type: 'NORMAAL', pow: 60, acc: 100, pp: 25 },
+  snel: { name: 'SNELAANVAL', type: 'NORMAAL', pow: 40, acc: 100, pp: 30, prio: 1 },
+  grom: { name: 'GROM', type: 'NORMAAL', acc: 100, pp: 40, fx: ['foe', 'atk', -1] },
+  staart: { name: 'STAARTZWAAI', type: 'NORMAAL', acc: 100, pp: 30, fx: ['foe', 'def', -1] },
+  draad: { name: 'DRAADSPUUG', type: 'PLANT', acc: 95, pp: 40, fx: ['foe', 'spd', -1] },
+  harden: { name: 'VERHARDEN', type: 'NORMAAL', acc: 100, pp: 30, fx: ['self', 'def', 1] },
+  vonk: { name: 'VONK', type: 'VUUR', pow: 40, acc: 100, pp: 25 },
+  vlambeet: { name: 'VLAMBEET', type: 'VUUR', pow: 65, acc: 95, pp: 15 },
+  bel: { name: 'BELLETJE', type: 'WATER', pow: 40, acc: 100, pp: 30 },
+  straal: { name: 'WATERSTRAAL', type: 'WATER', pow: 65, acc: 95, pp: 15 },
+  blad: { name: 'BLADMES', type: 'PLANT', pow: 45, acc: 100, pp: 25 },
+  zaad: { name: 'ZAADBOM', type: 'PLANT', pow: 65, acc: 95, pp: 15 },
+  pik: { name: 'PIK', type: 'VLIEG', pow: 35, acc: 100, pp: 35 },
+  wind: { name: 'WINDVLAAG', type: 'VLIEG', pow: 45, acc: 100, pp: 30 },
+  zap: { name: 'ZAP', type: 'ELEKTRO', pow: 40, acc: 100, pp: 30 },
+  worp: { name: 'STEENWORP', type: 'STEEN', pow: 50, acc: 90, pp: 15 }
+};
+
+const SPECIES = {
+  vonkvos: { name: 'VONKVOS', type: 'VUUR', b: [39, 52, 43, 65], rate: 45, xp: 62,
+    learn: [[1, 'kras'], [1, 'grom'], [6, 'vonk'], [12, 'vlambeet'], [16, 'hap']],
+    draw(s, b) {
+      s.P([30, 31, 33, 19, 31, 8, 38, 15, 38, 27, 34, 34], 1); s.P([32, 28, 34, 21, 36, 25, 35, 30], 0);
+      s.E(19, 29, 10, 7, 1); if (!b) s.E(19, 31, 6, 4, 0);
+      s.R(11, 32, 4, 6, 2); s.R(23, 32, 4, 6, 2);
+      s.P([8, 14, 9, 2, 15, 10], 2); s.P([24, 10, 29, 2, 30, 14], 2);
+      s.E(19, 17, 10, 8, 1);
+      if (!b) { s.E(19, 21, 5, 3, 0); s.R(14, 15, 2, 3, 3); s.R(23, 15, 2, 3, 3); s.R(18, 19, 3, 2, 3); s.R(13, 13, 3, 1, 2); s.R(22, 13, 3, 1, 2); }
+      else s.R(15, 12, 9, 2, 2);
+    } },
+  druppelpad: { name: 'DRUPPELPAD', type: 'WATER', b: [44, 48, 65, 43], rate: 45, xp: 63,
+    learn: [[1, 'beuk'], [1, 'staart'], [6, 'bel'], [12, 'straal'], [16, 'hap']],
+    draw(s, b) {
+      s.E(20, 28, 15, 10, 1); if (!b) s.E(20, 31, 9, 6, 0);
+      s.E(11, 16, 6, 6, 1); s.E(29, 16, 6, 6, 1);
+      s.P([20, 3, 15, 13, 25, 13], 2); s.E(20, 13, 5, 4, 2); s.R(18, 10, 1, 2, 0);
+      if (!b) { s.E(11, 16, 3, 3, 0); s.E(29, 16, 3, 3, 0); s.R(10, 15, 2, 3, 3); s.R(28, 15, 2, 3, 3); s.R(13, 24, 14, 1, 3); s.R(12, 23, 1, 1, 3); s.R(27, 23, 1, 1, 3); }
+      else { s.R(14, 22, 3, 2, 2); s.R(24, 25, 3, 2, 2); }
+      s.E(8, 37, 6, 2, 2); s.E(32, 37, 6, 2, 2);
+    } },
+  kiemkop: { name: 'KIEMKOP', type: 'PLANT', b: [45, 49, 49, 45], rate: 45, xp: 64,
+    learn: [[1, 'beuk'], [1, 'grom'], [6, 'blad'], [12, 'zaad'], [16, 'harden']],
+    draw(s, b) {
+      s.E(20, 33, 9, 5, 1); s.E(13, 38, 4, 2, 2); s.E(27, 38, 4, 2, 2);
+      s.E(20, 21, 12, 10, 1);
+      s.R(19, 4, 2, 8, 2); s.E(14, 6, 6, 3, 2); s.E(26, 6, 6, 3, 2); s.E(14, 6, 3, 1, 1); s.E(26, 6, 3, 1, 1);
+      if (!b) { s.E(15, 20, 2, 3, 3); s.E(25, 20, 2, 3, 3); s.R(15, 19, 1, 1, 0); s.R(25, 19, 1, 1, 0); s.R(11, 25, 3, 1, 2); s.R(26, 25, 3, 1, 2); s.R(18, 26, 4, 1, 3); }
+      else { s.R(13, 18, 3, 3, 2); s.R(24, 22, 3, 3, 2); s.R(18, 26, 3, 3, 2); }
+    } },
+  piepmuis: { name: 'PIEPMUIS', type: 'NORMAAL', b: [30, 56, 35, 72], rate: 255, xp: 51,
+    learn: [[1, 'beuk'], [1, 'staart'], [6, 'snel'], [12, 'hap']],
+    draw(s, b) {
+      s.R(30, 30, 7, 2, 2); s.R(35, 22, 2, 10, 2); s.R(33, 21, 3, 2, 2);
+      s.E(20, 29, 10, 8, 1); if (!b) s.E(20, 31, 6, 5, 0);
+      s.R(13, 35, 4, 4, 2); s.R(23, 35, 4, 4, 2);
+      s.E(10, 9, 6, 6, 1); s.E(30, 9, 6, 6, 1); s.E(10, 9, 3, 3, 0); s.E(30, 9, 3, 3, 0);
+      s.E(20, 18, 10, 8, 1);
+      if (!b) { s.R(15, 16, 2, 3, 3); s.R(23, 16, 2, 3, 3); s.R(19, 20, 2, 2, 3); s.R(19, 23, 2, 2, 0); s.R(7, 21, 6, 1, 2); s.R(27, 21, 6, 1, 2); s.R(8, 19, 5, 1, 2); s.R(27, 19, 5, 1, 2); }
+    } },
+  tsjilp: { name: 'TSJILP', type: 'VLIEG', b: [40, 45, 40, 56], rate: 255, xp: 50,
+    learn: [[1, 'pik'], [1, 'grom'], [8, 'wind'], [13, 'snel']],
+    draw(s, b) {
+      s.P([28, 24, 39, 16, 38, 32], 2);
+      s.P([15, 10, 19, 1, 23, 11], 2);
+      s.E(20, 24, 12, 11, 1);
+      if (!b) { s.E(21, 28, 7, 6, 0); s.P([5, 21, 11, 18, 11, 25], 2); s.E(14, 19, 2, 2, 3); s.R(13, 18, 1, 1, 0); }
+      s.E(26, 25, 5, 7, 2);
+      s.R(17, 34, 2, 5, 3); s.R(23, 34, 2, 5, 3);
+    } },
+  rupsje: { name: 'RUPSJE', type: 'PLANT', b: [45, 30, 35, 45], rate: 255, xp: 39,
+    learn: [[1, 'beuk'], [1, 'draad'], [7, 'blad']],
+    draw(s, b) {
+      s.E(7, 32, 5, 5, 1); s.E(14, 30, 6, 6, 1); s.E(21, 27, 6, 7, 1);
+      s.R(6, 36, 2, 3, 2); s.R(13, 35, 2, 3, 2); s.R(20, 33, 2, 4, 2);
+      s.R(28, 6, 1, 7, 3); s.R(34, 6, 1, 7, 3); s.E(28, 6, 1.6, 1.6, 3); s.E(34, 6, 1.6, 1.6, 3);
+      s.E(31, 19, 8, 8, 1);
+      s.R(13, 28, 3, 2, 2); s.R(20, 24, 3, 2, 2); s.R(6, 30, 2, 2, 2);
+      if (!b) { s.E(31, 23, 4, 2.5, 0); s.E(28, 18, 2, 2, 3); s.E(34, 18, 2, 2, 3); s.R(29, 23, 4, 1, 3); }
+    } },
+  zoemzap: { name: 'ZOEMZAP', type: 'ELEKTRO', b: [35, 55, 30, 90], rate: 120, xp: 80,
+    learn: [[1, 'zap'], [1, 'grom'], [9, 'snel'], [14, 'hap']],
+    draw(s, b) {
+      s.E(18, 11, 6, 8, 0); s.E(28, 11, 6, 8, 0);
+      s.P([32, 22, 39, 24, 32, 27], 3);
+      s.E(22, 25, 11, 8, 1); s.clipE(22, 25, 11, 8, () => { s.R(19, 15, 3, 20, 3); s.R(26, 15, 3, 20, 3); });
+      s.R(7, 12, 1, 6, 3); s.R(12, 12, 1, 6, 3); s.R(5, 11, 3, 1, 3); s.R(12, 11, 3, 1, 3);
+      s.E(10, 24, 7, 7, 1);
+      if (!b) { s.E(8, 23, 2, 2, 3); s.E(13, 23, 2, 2, 3); s.R(8, 22, 1, 1, 0); s.R(13, 22, 1, 1, 0); s.R(9, 27, 4, 1, 3); }
+      s.R(16, 32, 2, 4, 3); s.R(25, 32, 2, 4, 3);
+    } },
+  keisteen: { name: 'KEISTEEN', type: 'STEEN', b: [40, 80, 100, 20], rate: 180, xp: 73,
+    learn: [[1, 'beuk'], [1, 'harden'], [7, 'worp']],
+    draw(s, b) {
+      s.E(5, 26, 5, 4, 2); s.E(35, 26, 5, 4, 2);
+      s.P([7, 30, 9, 16, 16, 8, 27, 9, 33, 17, 34, 30, 26, 37, 14, 37], 2);
+      s.P([11, 18, 17, 11, 24, 12, 18, 17], 1);
+      s.R(22, 26, 6, 1, 3); s.R(27, 27, 1, 4, 3); s.R(12, 31, 4, 1, 3);
+      if (!b) { s.R(13, 21, 4, 2, 3); s.R(23, 21, 4, 2, 3); s.R(12, 19, 5, 1, 3); s.R(23, 19, 5, 1, 3); s.R(16, 28, 8, 1, 3); }
+    } },
+  rotsreus: { name: 'ROTSREUS', type: 'STEEN', b: [70, 95, 115, 30], rate: 45, xp: 130,
+    learn: [[1, 'beuk'], [1, 'harden'], [1, 'worp'], [1, 'hap']],
+    draw(s, b) {
+      s.E(5, 22, 6, 9, 2); s.E(35, 22, 6, 9, 2);
+      s.P([6, 36, 8, 14, 14, 5, 26, 5, 32, 14, 34, 36], 2);
+      s.P([12, 13, 16, 8, 24, 8, 20, 13], 1);
+      s.E(5, 33, 5, 4, 1); s.E(35, 33, 5, 4, 1);
+      s.R(12, 36, 6, 3, 3); s.R(22, 36, 6, 3, 3);
+      s.R(10, 26, 7, 1, 3); s.R(25, 30, 6, 1, 3); s.R(30, 30, 1, 4, 3);
+      if (!b) { s.R(14, 15, 4, 3, 3); s.R(22, 15, 4, 3, 3); s.R(15, 15, 1, 1, 0); s.R(23, 15, 1, 1, 0); s.R(16, 21, 8, 2, 3); s.R(17, 21, 1, 1, 0); s.R(22, 21, 1, 1, 0); }
+    } }
+};
+const SPR = {};
+for (const k in SPECIES) SPR[k] = { front: art(40, 40, s => SPECIES[k].draw(s, false)), back: flip(art(40, 40, s => SPECIES[k].draw(s, true))) };
+
+/* ---------- people ---------- */
+const LOOKS = {
+  hero: { hair: 3, shirt: 2, hat: 1, hatC: 2 }, rival: { hair: 2, shirt: 1 }, prof: { hair: 1, shirt: 0 },
+  mom: { hair: 2, shirt: 1, dress: 1 }, sis: { hair: 3, shirt: 1, dress: 1 }, boy: { hair: 3, shirt: 1, hat: 1, hatC: 1 },
+  girl: { hair: 2, shirt: 2, dress: 1 }, old: { hair: 1, shirt: 2 }, nurse: { hair: 2, shirt: 0, hat: 1, hatC: 0, dress: 1 },
+  clerk: { hair: 3, shirt: 2 }, leader: { hair: 3, shirt: 2, legs: 2 }, hiker: { hair: 3, shirt: 1, hat: 1, hatC: 3 }
+};
+function drawPerson(s, dir, f, L) {
+  const leg = L.legs ?? 3;
+  if (dir === 'down' || dir === 'up') {
+    if (f === 0) { s.R(5, 13, 2, 2, leg); s.R(9, 13, 2, 2, leg); }
+    else if (f === 1) { s.R(5, 13, 2, 1, leg); s.R(9, 13, 2, 2, leg); }
+    else { s.R(5, 13, 2, 2, leg); s.R(9, 13, 2, 1, leg); }
+    if (L.dress) s.R(3, 9, 10, 5, L.shirt); else s.R(4, 9, 8, 5, L.shirt);
+    s.R(3, 10, 1, 3, 0); s.R(12, 10, 1, 3, 0);
+    if (dir === 'down') {
+      s.R(4, 3, 8, 7, 0);
+      s.R(4, 2, 8, 3, L.hair); s.R(3, 3, 1, 4, L.hair); s.R(12, 3, 1, 4, L.hair);
+      if (L.hat) { s.R(3, 1, 10, 3, L.hatC); s.R(3, 4, 10, 1, 3); }
+      s.R(6, 6, 1, 2, 3); s.R(9, 6, 1, 2, 3);
+    } else {
+      s.R(4, 2, 8, 8, L.hair); s.R(3, 3, 10, 5, L.hair);
+      if (L.hat) s.R(3, 1, 10, 4, L.hatC);
+    }
+  } else {
+    if (f === 0) s.R(6, 13, 4, 2, leg); else { s.R(4, 13, 2, 2, leg); s.R(9, 13, 2, 2, leg); }
+    if (L.dress) s.R(4, 9, 8, 5, L.shirt); else s.R(5, 9, 6, 5, L.shirt);
+    s.R(f ? 6 : 7, 10, 2, 3, 0);
+    s.R(4, 3, 7, 7, 0);
+    s.R(6, 2, 7, 4, L.hair); s.R(9, 2, 4, 8, L.hair);
+    if (L.hat) { s.R(4, 1, 9, 3, L.hatC); s.R(2, 3, 6, 1, 3); }
+    s.R(5, 6, 1, 2, 3);
+  }
+}
+const PEOPLE = {};
+for (const k in LOOKS) {
+  const P = {};
+  for (const d of ['down', 'up', 'left']) P[d] = [0, 1, 2].map(f => art(16, 16, s => drawPerson(s, d, f, LOOKS[k])));
+  P.right = P.left.map(flip);
+  PEOPLE[k] = P;
+}
+const BALL16 = art(16, 16, s => { s.E(8, 9, 5, 5, 0); s.top(8, 9, 5, 2); s.R(3, 9, 11, 1, 3); s.E(8, 9.5, 1.7, 1.7, 0); });
+const BALL8 = art(10, 10, s => { s.E(5, 5, 3.6, 3.6, 0); s.top(5, 5, 3.6, 2); s.R(1, 5, 8, 1, 3); });
+const PLATFORM = art(60, 12, s => s.E(30, 6, 28, 4.5, 1), false);
+
+/* ---------- tiles ---------- */
+const TILES = {};
+const T2 = fn => [art(16, 16, s => fn(s, 0), false), art(16, 16, s => fn(s, 1), false)];
+const ground = s => s.R(0, 0, 16, 16, 0);
+const floor = s => { s.R(0, 0, 16, 16, 0); s.R(0, 15, 16, 1, 1); s.R(15, 0, 1, 16, 1); s.R(7, 7, 1, 1, 1); };
+const wall = s => { s.R(0, 0, 16, 16, 0); s.R(0, 0, 16, 1, 3); s.R(0, 5, 16, 1, 1); s.R(0, 10, 16, 1, 1); s.R(0, 14, 16, 2, 2); };
+TILES['.'] = T2(s => { ground(s); s.R(3, 5, 1, 1, 1); s.R(4, 4, 1, 1, 1); s.R(5, 5, 1, 1, 1); s.R(11, 11, 1, 1, 1); s.R(12, 10, 1, 1, 1); s.R(13, 11, 1, 1, 1); });
+TILES[','] = T2(s => { ground(s); [[2, 2], [9, 6], [5, 12], [13, 14], [12, 1]].forEach(([x, y]) => s.R(x, y, 1, 1, 1)); });
+TILES.G = T2(s => { s.R(0, 0, 16, 16, 1); for (const [bx, by] of [[0, 1], [8, 1], [4, 9], [12, 9], [-4, 9]]) { s.R(bx + 1, by + 2, 1, 4, 2); s.R(bx + 3, by, 1, 6, 2); s.R(bx + 5, by + 2, 1, 4, 2); s.R(bx, by + 6, 7, 1, 3); } });
+TILES.T = T2(s => { ground(s); s.R(6, 11, 4, 5, 3); s.R(7, 11, 2, 4, 2); s.E(8, 6.5, 7.5, 6.5, 3); s.E(8, 6.5, 6.3, 5.3, 1); s.E(9.5, 8, 3.5, 2.5, 2); s.R(4, 3, 2, 2, 0); s.R(6, 2, 1, 1, 0); });
+TILES.W = T2((s, f) => { s.R(0, 0, 16, 16, 1); const o = f * 4; s.R((2 + o) % 16, 4, 5, 1, 0); s.R((10 + o) % 16, 4, 4, 1, 0); s.R((6 + o) % 16, 11, 5, 1, 0); s.R((14 + o) % 16, 11, 3, 1, 0); });
+TILES.F = T2((s, f) => {
+  ground(s);
+  for (const [x, y] of [[4, 4], [11, 11]]) {
+    if (f) { s.R(x - 1, y - 1, 1, 1, 2); s.R(x + 1, y - 1, 1, 1, 2); s.R(x - 1, y + 1, 1, 1, 2); s.R(x + 1, y + 1, 1, 1, 2); }
+    else { s.R(x, y - 1, 1, 1, 2); s.R(x - 1, y, 1, 1, 2); s.R(x + 1, y, 1, 1, 2); s.R(x, y + 1, 1, 1, 2); }
+    s.R(x, y, 1, 1, 3);
+  }
+  s.R(11, 4, 1, 2, 1); s.R(4, 11, 1, 2, 1);
+});
+TILES.R = T2(s => { s.R(0, 0, 16, 16, 2); for (let y = 3; y < 16; y += 4) s.R(0, y, 16, 1, 3); for (let y = 0; y < 16; y += 4) { const o = (y / 4) % 2 ? 4 : 0; s.R(o, y, 1, 3, 3); s.R(o + 8, y, 1, 3, 3); } });
+TILES.H = T2(wall);
+TILES.w = T2(s => { wall(s); s.R(3, 3, 10, 8, 3); s.R(4, 4, 8, 6, 1); s.R(7, 4, 2, 6, 3); s.R(4, 4, 3, 2, 0); });
+TILES.D = T2(s => { wall(s); s.R(3, 2, 10, 14, 3); s.R(4, 3, 8, 13, 2); s.R(10, 9, 1, 2, 0); s.R(4, 3, 8, 1, 1); });
+TILES.S = T2(s => { ground(s); s.R(7, 10, 2, 6, 3); s.R(1, 2, 14, 9, 3); s.R(2, 3, 12, 7, 1); s.R(4, 5, 8, 1, 2); s.R(4, 7, 6, 1, 2); });
+TILES.L = T2(s => { ground(s); s.R(0, 8, 16, 4, 1); s.R(0, 12, 16, 2, 3); s.R(3, 9, 1, 1, 2); s.R(10, 10, 1, 1, 2); });
+TILES._ = T2(floor);
+TILES['#'] = T2(s => { s.R(0, 0, 16, 16, 1); s.R(0, 11, 16, 5, 2); s.R(0, 15, 16, 1, 3); for (let x = 1; x < 16; x += 4) s.R(x, 2, 1, 7, 0); });
+TILES.B = T2(s => { floor(s); s.R(0, 1, 16, 13, 3); s.R(1, 2, 14, 9, 1); s.R(1, 11, 14, 2, 2); s.R(2, 3, 3, 1, 0); });
+TILES.K = T2(s => { s.R(0, 0, 16, 16, 3); s.R(1, 1, 14, 6, 2); s.R(1, 9, 14, 6, 2); for (let i = 0; i < 5; i++) { s.R(2 + i * 3, 2, 2, 5, i % 2 ? 0 : 1); s.R(2 + i * 3, 10, 2, 5, i % 2 ? 1 : 0); } });
+TILES.P = T2(s => { floor(s); s.R(5, 10, 6, 5, 3); s.R(6, 10, 4, 4, 2); s.E(8, 6, 5, 4.5, 3); s.E(8, 6, 4, 3.5, 1); s.R(6, 4, 2, 2, 0); s.R(8, 8, 1, 3, 2); });
+TILES.X = T2(s => { floor(s); s.R(1, 3, 14, 10, 3); s.R(2, 4, 12, 8, 2); s.R(2, 6, 12, 1, 1); s.R(2, 9, 12, 1, 1); });
+TILES.h = T2((s, f) => { floor(s); s.R(1, 2, 14, 12, 3); s.R(2, 3, 12, 9, 1); for (const x of [4.5, 8, 11.5]) s.E(x, 7, 1.6, 1.6, f ? 0 : 2); });
+const SOLID = new Set('TWRHwS#BKPhL'.split(''));
+
+/* ---------- maps ---------- */
+const MAPS = {
+  town: { name: 'DENNENDORP', out: true, music: 'town', rows: [
+    'TTTTTTTTT,,TTTTTTTTT',
+    'T........,,........T',
+    'T.RRRR...,,...RRRR.T',
+    'T.RRRR...,,...RRRR.T',
+    'T.HwDH...,,...HDwH.T',
+    'T...,....,,....,...T',
+    'T...,,,,,,,,,,,,...T',
+    'T.S......,,........T',
+    'T........,,...FFF..T',
+    'T..RRRRRR,,...FFF..T',
+    'T..RRRRRR,,........T',
+    'T..HwwDwH,,....S...T',
+    'T......,,,.........T',
+    'T.FF.....,....WWWW.T',
+    'T.FF.....,....WWWW.T',
+    'T........,....WWWW.T',
+    'T..................T',
+    'TTTTTTTTTTTTTTTTTTTT'],
+    warps: [
+      { x: 9, y: 0, to: 'route', tx: 9, ty: -2, dir: 'up', need: 'ready', msg: 'Een stem roept: Wacht even! Het is gevaarlijk in het hoge gras zonder eigen VIBEMON! Ga eerst naar het LAB.' },
+      { x: 10, y: 0, to: 'route', tx: 10, ty: -2, dir: 'up', need: 'ready', msg: 'Een stem roept: Wacht even! Het is gevaarlijk in het hoge gras zonder eigen VIBEMON! Ga eerst naar het LAB.' },
+      { x: 4, y: 4, to: 'house', tx: 3, ty: 6, dir: 'up' },
+      { x: 15, y: 4, to: 'rivalhouse', tx: 3, ty: 6, dir: 'up' },
+      { x: 6, y: 11, to: 'lab', tx: 4, ty: 8, dir: 'up' }],
+    signs: { '2,7': 'DENNENDORP\nEen rustig plekje tussen de dennen.', '15,11': 'LAB VAN PROF. LINDE\nOnderzoek naar VIBEMON.' } },
+  house: { name: 'THUIS', music: 'town', rows: [
+    '########',
+    '#KK___P#',
+    '#______#',
+    '#__BB__#',
+    '#__BB__#',
+    '#______#',
+    '#______#',
+    '###XX###'],
+    warps: [{ x: 3, y: 7, to: 'town', tx: 4, ty: 5, dir: 'down' }, { x: 4, y: 7, to: 'town', tx: 4, ty: 5, dir: 'down' }] },
+  rivalhouse: { name: 'HUIS VAN BAS', music: 'town', rows: [
+    '########',
+    '#P___KK#',
+    '#______#',
+    '#__BB__#',
+    '#__BB__#',
+    '#______#',
+    '#______#',
+    '###XX###'],
+    warps: [{ x: 3, y: 7, to: 'town', tx: 15, ty: 5, dir: 'down' }, { x: 4, y: 7, to: 'town', tx: 15, ty: 5, dir: 'down' }] },
+  lab: { name: 'LAB', music: 'center', rows: [
+    '##########',
+    '#KKK__KKK#',
+    '#________#',
+    '#_BBB____#',
+    '#________#',
+    '#________#',
+    '#P______P#',
+    '#________#',
+    '#________#',
+    '####XX####'],
+    warps: [{ x: 4, y: 9, to: 'town', tx: 6, ty: 12, dir: 'down' }, { x: 5, y: 9, to: 'town', tx: 6, ty: 12, dir: 'down' }] },
+  route: { name: 'ROUTE 1', out: true, music: 'route', rows: [
+    'TTTTTTTTT,,TTTTTTTTT',
+    'T........,,.....GGGT',
+    'TGGGG....,,.....GGGT',
+    'TGGGG....,,.....GGGT',
+    'TGGGG....,,........T',
+    'T........,,....S...T',
+    'TTTTTT...,,...TTTTTT',
+    'T........,,........T',
+    'T..GGGGGG,,.......FT',
+    'T..GGGGGG,,.......FT',
+    'T..GGGGGG,,........T',
+    'T........,,........T',
+    'TLLLLLLL.,,.LLLLLLLT',
+    'T........,,........T',
+    'T........,,.....GGGT',
+    'TGGGG....,,.....GGGT',
+    'TGGGG....,,..TT.GGGT',
+    'TGGGG....,,..TT....T',
+    'T........,,........T',
+    'T..FF....,,...GGGG.T',
+    'T..FF....,,...GGGG.T',
+    'T........,,........T',
+    'TTTTTTTTT,,TTTTTTTTT'],
+    warps: [
+      { x: 9, y: 22, to: 'town', tx: 9, ty: 1, dir: 'down' }, { x: 10, y: 22, to: 'town', tx: 10, ty: 1, dir: 'down' },
+      { x: 9, y: 0, to: 'city', tx: 9, ty: -2, dir: 'up' }, { x: 10, y: 0, to: 'city', tx: 10, ty: -2, dir: 'up' }],
+    signs: { '15,5': 'ROUTE 1\nNoord: VIBESTAD\nZuid: DENNENDORP' },
+    wild: [['piepmuis', 2, 4, 35], ['tsjilp', 2, 4, 30], ['rupsje', 3, 5, 20], ['keisteen', 4, 6, 8], ['zoemzap', 4, 6, 7]] },
+  city: { name: 'VIBESTAD', out: true, music: 'town', rows: [
+    'TTTTTTTTTTTTTTTTTTTT',
+    'T..................T',
+    'T.RRRRR....RRRRRRR.T',
+    'T.RRRRR....RRRRRRR.T',
+    'T.HwDwH....RRRRRRR.T',
+    'T...,......HwwDwwH.T',
+    'T...,,,,,,,,,,,,...T',
+    'T........,,........T',
+    'T.FF.....,,....S...T',
+    'T.FF.....,,........T',
+    'T........,,..WWWWW.T',
+    'T..S.....,,..WWWWW.T',
+    'T........,,........T',
+    'T..TT....,,....TT..T',
+    'T..TT....,,....TT..T',
+    'T........,,........T',
+    'T........,,........T',
+    'TTTTTTTTT,,TTTTTTTTT'],
+    warps: [
+      { x: 4, y: 4, to: 'center', tx: 5, ty: 6, dir: 'up' },
+      { x: 14, y: 5, to: 'gym', tx: 4, ty: 10, dir: 'up' },
+      { x: 9, y: 17, to: 'route', tx: 9, ty: 1, dir: 'down' }, { x: 10, y: 17, to: 'route', tx: 10, ty: 1, dir: 'down' }],
+    signs: { '15,8': 'VIBESTAD-ARENA\nLeider: BRAM\nDe rotsvaste trainer!', '3,11': 'VIBESTAD\nDe stad van goede vibes.' } },
+  center: { name: 'VIBE-CENTRUM', music: 'center', rows: [
+    '############',
+    '#K___h____K#',
+    '#__________#',
+    '#BBBBBBBBBB#',
+    '#__________#',
+    '#P________P#',
+    '#__________#',
+    '#####XX#####'],
+    warps: [{ x: 5, y: 7, to: 'city', tx: 4, ty: 5, dir: 'down' }, { x: 6, y: 7, to: 'city', tx: 4, ty: 5, dir: 'down' }] },
+  gym: { name: 'ARENA', music: 'route', rows: [
+    '##########',
+    '#K______K#',
+    '#________#',
+    '#________#',
+    '#P_P__P_P#',
+    '#________#',
+    '#________#',
+    '#__P__P__#',
+    '#________#',
+    '#________#',
+    '#P______P#',
+    '####XX####'],
+    warps: [{ x: 4, y: 11, to: 'city', tx: 14, ty: 6, dir: 'down' }, { x: 5, y: 11, to: 'city', tx: 14, ty: 6, dir: 'down' }] }
+};
+
+/* ---------- game state ---------- */
+let G = null, B = null, T = 0;
+const UI = { text: null, menu: null, wait: null, pic: null, under: null };
+function freshState() {
+  return { scene: 'title', map: 'house', x: 3, y: 5, dir: 'down', mv: null, parity: 0, turnWait: 0, bumpT: 0,
+    party: [], box: [], items: { bal: 0, drank: 0 }, money: 300, flags: {}, caught: 0,
+    heal: { map: 'house', x: 4, y: 5, dir: 'up' }, busy: false, fade: 0, wipe: 0, flash: false, loc: null, muted: G ? G.muted : false };
+}
+G = freshState();
+
+const nm = m => SPECIES[m.sp].name;
+const xpFor = l => Math.floor(0.8 * l * l * l);
+function stats(m) { const b = SPECIES[m.sp].b, L = m.lv; return { hp: Math.floor(b[0] * 2 * L / 100) + L + 10, atk: Math.floor(b[1] * 2 * L / 100) + 5, def: Math.floor(b[2] * 2 * L / 100) + 5, spd: Math.floor(b[3] * 2 * L / 100) + 5 }; }
+function makeMon(sp, lv) {
+  const ids = [];
+  for (const [l, id] of SPECIES[sp].learn) if (l <= lv && !ids.includes(id)) ids.push(id);
+  const m = { sp, lv, xp: xpFor(lv), moves: ids.slice(-4).map(id => ({ id, pp: MOVES[id].pp })), hp: 0 };
+  m.hp = stats(m).hp;
+  return m;
+}
+function healAll() { for (const m of G.party) { m.hp = stats(m).hp; m.moves.forEach(x => x.pp = MOVES[x.id].pp); } }
+const ITEMN = { bal: 'MONSTERBAL', drank: 'DRANKJE' };
+
+/* ---------- entities ---------- */
+const COUNTER = { vonkvos: 'druppelpad', druppelpad: 'kiemkop', kiemkop: 'vonkvos' };
+const ENTS = [
+  { id: 'mom', map: 'house', x: 5, y: 4, dir: 'left', look: 'mom', talk: momTalk },
+  { id: 'lisa', map: 'rivalhouse', x: 5, y: 3, dir: 'down', look: 'sis', talk: async () => {
+    if (!G.flags.lisa) { await say('LISA: Ben jij de rivaal van mijn broer BAS? Hier, een DRANKJE voor onderweg!'); G.items.drank++; G.flags.lisa = true; sfx('item'); await say('Je krijgt een DRANKJE!'); }
+    else await say('LISA: BAS praat de hele dag over VIBEMON. Echt de hele dag.');
+  } },
+  { id: 'prof', map: 'lab', x: 6, y: 2, dir: 'down', look: 'prof', talk: async () => {
+    if (!G.flags.starter) await say('PROF. LINDE: Daar ben je! Op tafel liggen drie MONSTERBALLEN. Kies er maar een uit!');
+    else if (G.flags.badge) await say('PROF. LINDE: Wauw, de KEIBADGE! Ik ben trots op je. Ga zo door!');
+    else await say('PROF. LINDE: Arenaleider BRAM woont in VIBESTAD, ten noorden van ROUTE 1. Veel succes!');
+  } },
+  { id: 'rival', map: 'lab', x: 7, y: 5, dir: 'up', look: 'rival', hide: () => G.flags.rivalGone, text: 'BAS: Kies nou maar snel, ik heb niet de hele dag!' },
+  { id: 'ball_kiemkop', map: 'lab', x: 2, y: 3, dir: 'down', sprite: 'ball', hide: () => takenBall('kiemkop'), talk: () => pickStarter('kiemkop') },
+  { id: 'ball_vonkvos', map: 'lab', x: 3, y: 3, dir: 'down', sprite: 'ball', hide: () => takenBall('vonkvos'), talk: () => pickStarter('vonkvos') },
+  { id: 'ball_druppelpad', map: 'lab', x: 4, y: 3, dir: 'down', sprite: 'ball', hide: () => takenBall('druppelpad'), talk: () => pickStarter('druppelpad') },
+  { id: 'girl', map: 'town', x: 12, y: 13, dir: 'left', look: 'girl', text: 'Met MONSTERBALLEN vang je wilde VIBEMON. Maak ze wel eerst een beetje moe!' },
+  { id: 'oldman', map: 'town', x: 16, y: 7, dir: 'down', look: 'old', text: 'Technologie is geweldig! Via het START-menu kun je je spel opslaan.' },
+  { id: 'ledgeguy', map: 'route', x: 15, y: 8, dir: 'down', look: 'hiker', text: 'Van een richel kun je naar beneden springen. Terug omhoog gaat niet!' },
+  { id: 'tim', map: 'route', x: 12, y: 10, dir: 'left', look: 'boy', trainer: { name: 'JONGEN TIM', party: [['rupsje', 4], ['piepmuis', 4]], money: 80,
+    intro: 'TIM: Onze blikken kruisten! Dat betekent maar een ding: vechten!', winText: 'TIM: Nee! Mijn arme RUPSJE!', after: 'TIM: Ik ga nog veel meer RUPSJES vangen. Dan zul je zien!' } },
+  { id: 'roos', map: 'route', x: 7, y: 4, dir: 'right', look: 'girl', trainer: { name: 'MEISJE ROOS', party: [['tsjilp', 5], ['zoemzap', 6]], money: 120,
+    intro: 'ROOS: Ik heb net een ZOEMZAP gevangen. Wil je hem zien?', winText: 'ROOS: Au! Dat prikte!', after: 'ROOS: Je bent sterk. BRAM in VIBESTAD is wel heel taai, hoor.' } },
+  { id: 'item_bal', map: 'route', x: 1, y: 1, dir: 'down', sprite: 'ball', item: 'bal', hide: () => G.flags.got_item_bal },
+  { id: 'item_drank', map: 'route', x: 18, y: 13, dir: 'down', sprite: 'ball', item: 'drank', hide: () => G.flags.got_item_drank },
+  { id: 'cityman', map: 'city', x: 7, y: 9, dir: 'down', look: 'old', text: 'Het VIBE-CENTRUM geneest je monsters gratis. Het is het gebouw links!' },
+  { id: 'citykid', map: 'city', x: 12, y: 13, dir: 'left', look: 'boy', text: 'BRAM gebruikt STEEN-monsters. WATER en PLANT werken daar super goed tegen!' },
+  { id: 'nurse', map: 'center', x: 5, y: 2, dir: 'down', look: 'nurse', talk: nurseTalk },
+  { id: 'clerk', map: 'center', x: 9, y: 2, dir: 'down', look: 'clerk', talk: shop },
+  { id: 'centerguy', map: 'center', x: 2, y: 4, dir: 'right', look: 'hiker', text: 'Als al je monsters zijn uitgeschakeld, word je wakker bij de laatste plek waar je genezen bent.' },
+  { id: 'guide', map: 'gym', x: 2, y: 9, dir: 'right', look: 'old', text: 'Hoi kampioen in spe! BRAM gebruikt STEEN. VUUR en VLIEG doen daar weinig. Kies WATER of PLANT!' },
+  { id: 'koos', map: 'gym', x: 7, y: 6, dir: 'left', look: 'hiker', trainer: { name: 'WANDELAAR KOOS', party: [['keisteen', 7], ['keisteen', 8]], money: 160,
+    intro: 'KOOS: Ho! Eerst langs mij, dan pas mag je BRAM uitdagen!', winText: 'KOOS: Hard als steen... maar jij bent harder!', after: 'KOOS: BRAM is nog veel sterker dan ik. Pas op!' } },
+  { id: 'bram', map: 'gym', x: 4, y: 2, dir: 'down', look: 'leader', trainer: { name: 'LEIDER BRAM', leader: true, range: 0, party: [['keisteen', 9], ['rotsreus', 11]], money: 1000,
+    intro: 'BRAM: Ik ben BRAM, leider van de VIBESTAD-ARENA! Mijn STEEN-monsters zijn hard als graniet. Laat maar zien wat je kunt!',
+    winText: 'BRAM: Ongelofelijk... jij bent sterker dan ik dacht!', after: 'BRAM: Er zijn nog veel meer VIBEMON te ontdekken. Blijf trainen!', onWin: bramWin } }
+];
+const takenBall = sp => G.flags.starter === sp || G.flags.rivalSp === sp;
+const vis = e => !(e.hide && e.hide());
+const entAt = (x, y) => ENTS.find(e => e.map === G.map && vis(e) && e.x === x && e.y === y);
+const ent = id => ENTS.find(e => e.id === id);
+function resetEnts() { for (const e of ENTS) { if (e._home) Object.assign(e, e._home); else e._home = { x: e.x, y: e.y, dir: e.dir }; e.mv = null; e.emote = false; } }
+resetEnts();
+
+/* ---------- map helpers ---------- */
+function tileAt(x, y, mapId = G.map) {
+  const m = MAPS[mapId], h = m.rows.length, w = m.rows[0].length;
+  if (x >= 0 && y >= 0 && x < w && y < h) return m.rows[y][x];
+  if (!m.out) return null;
+  const c = m.rows[Math.max(0, Math.min(h - 1, y))][Math.max(0, Math.min(w - 1, x))];
+  return c === ',' ? ',' : 'T';
+}
+function blocked(x, y) {
+  const m = MAPS[G.map];
+  if (x < 0 || y < 0 || x >= m.rows[0].length || y >= m.rows.length) return true;
+  return SOLID.has(m.rows[y][x]) || !!entAt(x, y);
+}
+
+/* ---------- timing ---------- */
+const tweens = [], timers = [];
+function tween(o, k, to, ms) { return new Promise(r => { if (ms <= 0) { o[k] = to; r(); return; } tweens.push({ o, k, from: o[k], to, t: 0, ms, r }); }); }
+function wait(ms) { return new Promise(r => timers.push({ t: ms, r })); }
+function updTimers(dt) {
+  const ms = dt * 1000;
+  for (let i = tweens.length - 1; i >= 0; i--) { const w = tweens[i]; w.t += ms; const p = Math.min(1, w.t / w.ms); w.o[w.k] = w.from + (w.to - w.from) * p; if (p >= 1) { tweens.splice(i, 1); w.r(); } }
+  for (let i = timers.length - 1; i >= 0; i--) { timers[i].t -= ms; if (timers[i].t <= 0) { const r = timers[i].r; timers.splice(i, 1); r(); } }
+}
+const fade = v => tween(G, 'fade', v, 260);
+
+/* ---------- input ---------- */
+const keys = {}, pressed = new Set();
+const KMAP = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
+  KeyZ: 'a', Space: 'a', KeyJ: 'a', KeyX: 'b', Backspace: 'b', Escape: 'b', KeyK: 'b', Enter: 'start', ShiftRight: 'select', ShiftLeft: 'select', KeyM: 'select' };
+function press(k) { if (!keys[k]) pressed.add(k); keys[k] = true; audioInit(); if (k === 'select') toggleMute(); }
+function release(k) { keys[k] = false; }
+addEventListener('keydown', e => { const k = KMAP[e.code]; if (!k) return; e.preventDefault(); if (!e.repeat) press(k); });
+addEventListener('keyup', e => { const k = KMAP[e.code]; if (k) release(k); });
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+document.querySelectorAll('[data-k]').forEach(b => {
+  const k = b.dataset.k;
+  b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture && b.setPointerCapture(e.pointerId); b.classList.add('down'); press(k); });
+  const up = () => { b.classList.remove('down'); release(k); };
+  b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
+  b.addEventListener('contextmenu', e => e.preventDefault());
+});
+function hit(k) { if (pressed.has(k)) { pressed.delete(k); return true; } return false; }
+function heldDir() { for (const d of ['up', 'down', 'left', 'right']) if (keys[d]) return d; return null; }
+
+/* ---------- audio ---------- */
+let AC = null, master = null, noiseBuf = null;
+function audioInit() {
+  if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = G.muted ? 0 : 0.12; master.connect(AC.destination);
+    noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    nextT = AC.currentTime + 0.05;
+  } catch (e) { AC = null; }
+  updLed();
+}
+function toggleMute() { G.muted = !G.muted; if (master) master.gain.value = G.muted ? 0 : 0.12; updLed(); }
+function updLed() { document.getElementById('led').classList.toggle('on', !!AC && !G.muted); }
+const hz = n => 440 * Math.pow(2, (n - 69) / 12);
+function tone(f, t0, dur, type = 'square', vol = 0.3, f2) {
+  if (!AC) return;
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t0);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur);
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+  o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + 0.02);
+}
+function noise(t0, dur, vol = 0.4) {
+  if (!AC) return;
+  const s = AC.createBufferSource(), g = AC.createGain(); s.buffer = noiseBuf;
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+  s.connect(g); g.connect(master); s.start(t0); s.stop(t0 + dur);
+}
+function arp(notes, step = 0.09, type = 'square', vol = 0.3) { if (!AC) return; const t = AC.currentTime; notes.forEach((n, i) => tone(hz(n), t + i * step, step * 1.6, type, vol)); }
+function sfx(n) {
+  if (!AC) return;
+  const t = AC.currentTime;
+  switch (n) {
+    case 'move': tone(1400, t, 0.03, 'square', 0.12); break;
+    case 'sel': tone(1568, t, 0.06, 'square', 0.2); break;
+    case 'bump': tone(90, t, 0.09, 'square', 0.3); break;
+    case 'door': tone(500, t, 0.18, 'square', 0.2, 180); break;
+    case 'jump': tone(300, t, 0.2, 'square', 0.2, 900); break;
+    case 'hit': noise(t, 0.14, 0.5); tone(160, t, 0.12, 'square', 0.2, 60); break;
+    case 'hit2': noise(t, 0.25, 0.6); tone(220, t, 0.22, 'square', 0.3, 50); break;
+    case 'faint': tone(700, t, 0.5, 'square', 0.25, 80); break;
+    case 'ball': tone(900, t, 0.06, 'square', 0.2); tone(1300, t + 0.07, 0.08, 'square', 0.2); break;
+    case 'throw': tone(250, t, 0.4, 'triangle', 0.4, 1200); break;
+    case 'shake': tone(200, t, 0.08, 'square', 0.25); break;
+    case 'caught': arp([72, 76, 79, 84, 79, 84], 0.1); break;
+    case 'item': arp([67, 72, 76, 79], 0.08); break;
+    case 'lvl': arp([72, 74, 76, 77, 79], 0.07); break;
+    case 'heal': arp([79, 76, 72, 76, 79, 84], 0.13, 'square', 0.25); break;
+    case 'alert': tone(1800, t, 0.06, 'square', 0.25); tone(1800, t + 0.1, 0.12, 'square', 0.25); break;
+    case 'down': tone(900, t, 0.25, 'square', 0.2, 250); break;
+    case 'up': tone(300, t, 0.25, 'square', 0.2, 1000); break;
+    case 'win': arp([67, 72, 76, 79, 76, 79, 84], 0.11, 'square', 0.28); break;
+    case 'flee': tone(400, t, 0.3, 'square', 0.2, 1500); break;
+  }
+}
+const SONGS = {
+  title: { bpm: 120, lead: [76,0,76,79, 0,76,74,72, 74,0,74,76, 74,0,71,0, 72,0,72,76, 0,72,71,69, 71,0,74,72, 71,69,67,0],
+    bass: [48,0,55,0, 48,0,55,0, 43,0,50,0, 43,0,50,0, 45,0,52,0, 45,0,52,0, 43,0,50,0, 43,0,47,0] },
+  town: { bpm: 112, lead: [72,0,74,76, 79,0,76,0, 77,76,74,0, 72,0,0,0, 74,0,76,77, 81,0,79,77, 76,74,72,74, 76,0,0,0],
+    bass: [48,0,55,0,52,0,55,0, 53,0,57,0,48,0,55,0, 50,0,57,0,53,0,57,0, 43,0,50,0,48,0,43,0] },
+  route: { bpm: 140, lead: [67,69,71,0, 74,0,71,0, 72,71,69,67, 69,0,0,0, 67,69,71,0, 76,0,74,72, 71,72,74,71, 67,0,0,0],
+    bass: [43,0,50,0,43,0,50,0, 45,0,52,0,45,0,52,0, 48,0,55,0,48,0,55,0, 50,0,57,0,50,0,57,0] },
+  center: { bpm: 100, lead: [79,0,76,0,72,0,76,0, 77,0,74,0,71,0,74,0, 76,0,72,0,67,0,72,0, 74,0,71,0,72,0,0,0],
+    bass: [48,0,0,0,55,0,0,0, 43,0,0,0,50,0,0,0, 45,0,0,0,52,0,0,0, 43,0,0,0,48,0,0,0] },
+  battle: { bpm: 170, lead: [69,0,69,72, 69,0,76,0, 74,72,71,72, 69,0,0,0, 69,0,69,72, 69,0,77,0, 76,74,72,71, 72,0,71,0],
+    bass: [45,57,45,57,45,57,45,57, 41,53,41,53,41,53,41,53, 43,55,43,55,43,55,43,55, 40,52,40,52,44,56,44,56] },
+  leader: { bpm: 184, lead: [64,0,67,0, 71,0,72,71, 69,0,67,0, 64,0,0,0, 64,0,67,0, 72,0,74,72, 71,0,69,0, 71,0,0,0],
+    bass: [40,52,40,52,40,52,40,52, 36,48,36,48,36,48,36,48, 38,50,38,50,38,50,38,50, 35,47,35,47,35,47,35,47] }
+};
+let curSong = null, songStep = 0, nextT = 0;
+function music(name) { if (curSong === name) return; curSong = name; songStep = 0; if (AC) nextT = AC.currentTime + 0.05; }
+setInterval(() => {
+  if (!AC || !curSong) return;
+  const s = SONGS[curSong], sp = 60 / s.bpm / 2;
+  if (nextT < AC.currentTime) nextT = AC.currentTime + 0.02;
+  while (nextT < AC.currentTime + 0.15) {
+    const n = s.lead[songStep % s.lead.length], b = s.bass[songStep % s.bass.length];
+    if (n) tone(hz(n), nextT, sp * 0.9, 'square', 0.16);
+    if (b) tone(hz(b), nextT, sp * 0.95, 'triangle', 0.5);
+    songStep++; nextT += sp;
+  }
+}, 40);
+
+/* ---------- text & menus ---------- */
+function wrap(str) {
+  const out = [];
+  for (const para of str.split('\n')) {
+    let line = '';
+    for (const w of para.split(' ')) {
+      if (!line) line = w;
+      else if ((line + ' ' + w).length <= 18) line += ' ' + w;
+      else { out.push(line); line = w; }
+    }
+    out.push(line);
+  }
+  return out;
+}
+function say(str, o = {}) {
+  return new Promise(r => {
+    const l = wrap(str), pages = [];
+    for (let i = 0; i < l.length; i += 2) pages.push(l.slice(i, i + 2));
+    UI.text = { pages, p: 0, n: 0, r, keep: !!o.keep };
+  });
+}
+function choose(items, o = {}) { return new Promise(r => { UI.menu = Object.assign({ items, i: o.start || 0, cols: 1, cancel: true, r }, o); }); }
+async function ask(q, items = ['JA', 'NEE']) { await say(q, { keep: true }); const i = await choose(items, { cancel: true }); UI.text = null; return i < 0 ? items.length - 1 : i; }
+function waitKey(ks) { return new Promise(r => { UI.wait = { ks, r }; }); }
+async function run(fn) { G.busy = true; try { await fn(); } catch (e) { console.error(e); } G.busy = false; }
+
+function updText(dt) {
+  const t = UI.text, pg = t.pages[t.p], total = pg.join('').length;
+  const last = t.p === t.pages.length - 1;
+  if (t.n < total) {
+    t.n += dt * 60 * (keys.a ? 3 : 1);
+    if (hit('a') || hit('b')) t.n = total;
+    if (t.n >= total) { t.n = total; if (t.keep && last && t.r) { const r = t.r; t.r = null; r(); } }
+    return;
+  }
+  if (t.keep && last) return;
+  if (hit('a') || hit('b')) {
+    t.p++; t.n = 0;
+    if (t.p >= t.pages.length) { UI.text = null; t.r(); }
+  }
+}
+function updMenu() {
+  const m = UI.menu, n = m.items.length, c = m.cols;
+  if (hit('up')) { if (m.i - c >= 0) m.i -= c; else if (c === 1) m.i = n - 1; sfx('move'); }
+  if (hit('down')) { if (m.i + c < n) m.i += c; else if (c === 1) m.i = 0; sfx('move'); }
+  if (c > 1) {
+    if (hit('left') && m.i % c > 0) { m.i--; sfx('move'); }
+    if (hit('right') && m.i % c < c - 1 && m.i + 1 < n) { m.i++; sfx('move'); }
+  }
+  if (hit('a')) { sfx('sel'); UI.menu = null; m.r(m.i); }
+  else if (hit('b') && m.cancel) { UI.menu = null; m.r(-1); }
+}
+
+/* ---------- drawing primitives ---------- */
+function R(x, y, w, h, i) { ctx.fillStyle = PAL[i]; ctx.fillRect(x, y, w, h); }
+function frame(x, y, w, h, i) { R(x, y, w, 1, i); R(x, y + h - 1, w, 1, i); R(x, y, 1, h, i); R(x + w - 1, y, 1, h, i); }
+function box(x, y, w, h) { R(x, y, w, h, 0); frame(x + 1, y + 1, w - 2, h - 2, 3); frame(x + 2, y + 2, w - 4, h - 4, 3); frame(x + 4, y + 4, w - 8, h - 8, 1); }
+function text(s, x, y, c = 3, size = 8) { ctx.fillStyle = PAL[c]; ctx.font = size + "px 'Press Start 2P', monospace"; ctx.fillText(s, x, y); }
+function cursor(x, y) { for (let i = 0; i < 7; i++) R(x, y + i, 4 - Math.abs(i - 3), 1, 3); }
+function downArrow(x, y) { for (let i = 0; i < 4; i++) R(x + i, y + i, 7 - 2 * i, 1, 3); }
+function hpbar(x, y, w, frac) { frac = Math.max(0, Math.min(1, frac)); R(x, y, w + 2, 5, 3); R(x + 1, y + 1, w, 3, 0); if (frac > 0) R(x + 1, y + 1, Math.max(1, Math.round(w * frac)), 3, frac > 0.25 ? 2 : 1); }
+function big(img, x, y, s) { ctx.drawImage(img, x, y, img.width * s, img.height * s); }
+
+function drawTextBox() {
+  const t = UI.text; if (!t) return;
+  box(0, 96, 160, 48);
+  let left = Math.floor(t.n);
+  t.pages[t.p].forEach((ln, i) => { const s = ln.slice(0, Math.max(0, left)); left -= ln.length; text(s, 8, 106 + i * 16); });
+  const last = t.p === t.pages.length - 1;
+  if (t.n >= t.pages[t.p].join('').length && !(t.keep && last) && Math.floor(T * 3) % 2) downArrow(146, 134);
+}
+function drawMenu(m) {
+  if (m.draw) return m.draw(m);
+  const c = m.cols, rows = Math.ceil(m.items.length / c);
+  const cw = m.colW || (Math.max(...m.items.map(s => s.length)) * 8 + 12);
+  const w = m.w || (16 + cw * c), h = m.h || (rows * 16 + 8);
+  const x = m.x ?? 160 - w, y = m.y ?? 96 - h;
+  box(x, y, w, h);
+  m.items.forEach((s, i) => { const ix = x + 14 + (i % c) * cw, iy = y + 8 + Math.floor(i / c) * 16; text(s, ix, iy); if (i === m.i) cursor(ix - 8, iy); });
+}
+
+/* ---------- world ---------- */
+function playerPix() {
+  let x = G.x * 16, y = G.y * 16, hop = 0;
+  if (G.mv) { const t = G.mv.t; x = (G.mv.fx + (G.mv.tx - G.mv.fx) * t) * 16; y = (G.mv.fy + (G.mv.ty - G.mv.fy) * t) * 16; if (G.mv.jump) hop = Math.sin(Math.PI * t) * 8; }
+  return [x, y, hop];
+}
+function entSprite(e) {
+  if (e.sprite === 'ball') return BALL16;
+  const f = e.mv ? (e.mv.t < 0.5 ? 1 + (e.parity || 0) : 0) : 0;
+  return PEOPLE[e.look][e.dir][f];
+}
+function drawWorld() {
+  const [px, py, hop] = playerPix();
+  const cx = Math.round(px - 64), cy = Math.round(py - 64);
+  R(0, 0, 160, 144, 3);
+  const fr = Math.floor(T * 1.6) % 2, x0 = Math.floor(cx / 16), y0 = Math.floor(cy / 16);
+  for (let ty = y0; ty <= y0 + 9; ty++) for (let tx = x0; tx <= x0 + 10; tx++) {
+    const ch = tileAt(tx, ty); if (ch) ctx.drawImage(TILES[ch][fr], tx * 16 - cx, ty * 16 - cy);
+  }
+  const list = ENTS.filter(e => e.map === G.map && vis(e)).map(e => {
+    const [dx, dy] = DIRS[e.dir], t = e.mv ? e.mv.t : 0;
+    return { img: entSprite(e), x: (e.x + dx * t) * 16, y: (e.y + dy * t) * 16, e, person: !!e.look };
+  });
+  const pf = G.mv && !G.mv.jump ? (G.mv.t < 0.5 ? 1 + G.parity : 0) : 0;
+  list.push({ img: PEOPLE.hero[G.dir][pf], x: px, y: py, hop, person: true });
+  list.sort((a, b) => a.y - b.y);
+  for (const s of list) {
+    const sx = Math.round(s.x - cx), gy = Math.round(s.y - cy), sy = gy - (s.person ? 2 : 0) - Math.round(s.hop || 0);
+    if (s.hop) R(sx + 3, gy + 14, 10, 2, 2);
+    ctx.drawImage(s.img, sx, sy);
+    if (s.person && !s.hop && tileAt(Math.round(s.x / 16), Math.round(s.y / 16)) === 'G') ctx.drawImage(TILES.G[0], 0, 11, 16, 5, sx, gy + 11, 16, 5);
+    if (s.e && s.e.emote) { R(sx + 2, sy - 15, 12, 13, 3); R(sx + 3, sy - 14, 10, 11, 0); text('!', sx + 5, sy - 12); }
+  }
+  if (G.loc && G.loc.t > 0) { const w = G.loc.name.length * 8 + 16; box(0, 0, w, 24); text(G.loc.name, 8, 8); }
+}
+function updMove(dt) {
+  if (!G.mv) return;
+  G.mv.t = Math.min(1, G.mv.t + dt / G.mv.dur);
+  if (G.mv.t >= 1) {
+    const mv = G.mv; G.x = mv.tx; G.y = mv.ty; G.mv = null; G.parity ^= 1;
+    if (mv.r) mv.r(); else onStep();
+  }
+}
+function updEnts(dt) {
+  for (const e of ENTS) {
+    if (!e.mv) continue;
+    e.mv.t = Math.min(1, e.mv.t + dt / e.mv.dur);
+    if (e.mv.t >= 1) { const [dx, dy] = DIRS[e.dir]; e.x += dx; e.y += dy; const r = e.mv.r; e.mv = null; e.parity = (e.parity || 0) ^ 1; r(); }
+  }
+}
+const walkEnt = (e, dir) => new Promise(r => { e.dir = dir; e.mv = { t: 0, dur: 0.22, r }; });
+const stepPlayer = dir => new Promise(r => { G.dir = dir; const [dx, dy] = DIRS[dir]; G.mv = { fx: G.x, fy: G.y, tx: G.x + dx, ty: G.y + dy, t: 0, dur: 0.2, r }; });
+
+function worldInput(dt) {
+  if (hit('start')) { sfx('sel'); run(startMenu); return; }
+  if (hit('a')) { interact(); return; }
+  hit('b');
+  const d = heldDir();
+  if (!d) { G.turnWait = 0; return; }
+  if (d !== G.dir) { G.dir = d; G.turnWait = 0.07; return; }
+  if (G.turnWait > 0) { G.turnWait -= dt; return; }
+  const [dx, dy] = DIRS[d], nx = G.x + dx, ny = G.y + dy;
+  if (tileAt(nx, ny) === 'L' && d === 'down' && !blocked(nx, ny + 1)) { G.mv = { fx: G.x, fy: G.y, tx: nx, ty: ny + 1, t: 0, dur: 0.38, jump: true }; sfx('jump'); return; }
+  if (blocked(nx, ny)) { if (G.bumpT <= 0) { sfx('bump'); G.bumpT = 0.35; } return; }
+  G.mv = { fx: G.x, fy: G.y, tx: nx, ty: ny, t: 0, dur: 0.2 };
+}
+function onStep() {
+  const m = MAPS[G.map];
+  const w = (m.warps || []).find(w => w.x === G.x && w.y === G.y);
+  if (w) { run(() => doWarp(w)); return; }
+  if (tileAt(G.x, G.y) === 'G' && m.wild && G.party.some(p => p.hp > 0) && rnd() < 0.11) { run(wildBattle); return; }
+  checkTrainers();
+}
+async function doWarp(w) {
+  if (w.need && !G.flags[w.need]) { await say(w.msg); await stepPlayer(OPP[G.dir]); G.dir = 'up'; return; }
+  sfx('door');
+  await fade(1);
+  enterMap(w.to, w.tx, w.ty, w.dir);
+  await fade(0);
+}
+function enterMap(id, x, y, dir) {
+  const m = MAPS[id];
+  G.map = id; G.x = x; G.y = y < 0 ? m.rows.length + y : y; G.dir = dir || G.dir; G.mv = null;
+  music(m.music);
+  if (m.out) G.loc = { name: m.name, t: 2.2 };
+}
+function interact() {
+  const [dx, dy] = DIRS[G.dir], tx = G.x + dx, ty = G.y + dy;
+  let e = entAt(tx, ty);
+  if (!e && tileAt(tx, ty) === 'B') e = entAt(tx + dx, ty + dy);
+  if (e) { run(async () => { if (e.look && !e.mv) e.dir = OPP[G.dir]; await talk(e); }); return; }
+  const m = MAPS[G.map], sign = m.signs && m.signs[tx + ',' + ty];
+  if (sign) { run(() => say(sign)); return; }
+  const flavor = { K: 'Allemaal boeken over VIBEMON. Spannend!', h: 'Een geneesmachine. Hij zoemt zachtjes.', P: 'Een plant. Iemand geeft hem goed water.', W: 'Het water is diep en helder.', w: 'Door het raam zie je... jezelf.' }[tileAt(tx, ty)];
+  if (flavor) run(() => say(flavor));
+}
+async function talk(e) {
+  if (e.item) { G.flags['got_' + e.id] = true; G.items[e.item]++; sfx('item'); await say('Je vindt een ' + ITEMN[e.item] + '!'); return; }
+  if (e.trainer) { if (G.flags['beat_' + e.id]) await say(e.trainer.after); else await trainerFight(e); return; }
+  if (e.talk) await e.talk(e); else await say(e.text);
+}
+function checkTrainers() {
+  for (const e of ENTS) {
+    if (e.map !== G.map || !e.trainer || !vis(e) || G.flags['beat_' + e.id]) continue;
+    const r = e.trainer.range ?? 4, [dx, dy] = DIRS[e.dir];
+    for (let k = 1; k <= r; k++) {
+      const x = e.x + dx * k, y = e.y + dy * k;
+      if (x === G.x && y === G.y) { run(() => trainerSpot(e, k)); return true; }
+      if (SOLID.has(tileAt(x, y)) || entAt(x, y)) break;
+    }
+  }
+  return false;
+}
+async function trainerSpot(e, k) {
+  sfx('alert'); e.emote = true; await wait(800); e.emote = false;
+  for (let i = 0; i < k - 1; i++) await walkEnt(e, e.dir);
+  G.dir = OPP[e.dir];
+  await trainerFight(e);
+}
+async function trainerFight(e) {
+  const tr = e.trainer;
+  await say(tr.intro);
+  const res = await battle({ trainer: Object.assign({ look: e.look }, tr) });
+  if (res === 'win') { G.flags['beat_' + e.id] = true; if (tr.onWin) await tr.onWin(); }
+}
+async function wildBattle() {
+  const tbl = MAPS[G.map].wild;
+  let r = rnd() * tbl.reduce((a, b) => a + b[3], 0), pick = tbl[0];
+  for (const t of tbl) { if ((r -= t[3]) < 0) { pick = t; break; } }
+  const lv = pick[1] + Math.floor(rnd() * (pick[2] - pick[1] + 1));
+  await battle({ wild: makeMon(pick[0], lv) });
+}
+
+/* ---------- story scripts ---------- */
+async function momTalk() {
+  if (!G.flags.starter) { await say('MAMA: Goedemorgen! PROF. LINDE zocht je. Het LAB is het grote gebouw onderin het dorp.'); return; }
+  await say('MAMA: Je ziet er moe uit. Rust even lekker uit!');
+  await fade(1); healAll(); sfx('heal'); await wait(1100); await fade(0);
+  G.heal = { map: 'house', x: 4, y: 5, dir: 'up' };
+  await say('MAMA: Zo! Je monsters zijn weer helemaal fit. Succes, schat!');
+}
+async function nurseTalk() {
+  const i = await ask('Welkom in het VIBE-CENTRUM! Zal ik je monsters genezen?');
+  if (i !== 0) { await say('Tot ziens!'); return; }
+  if (!G.party.length) { await say('Je hebt nog geen monsters bij je!'); return; }
+  await say('Oke, geef ze maar even aan mij...');
+  sfx('heal'); await wait(1300); healAll();
+  G.heal = { map: 'center', x: 5, y: 4, dir: 'up' };
+  await say('Je monsters zijn weer helemaal fit! Tot de volgende keer!');
+}
+async function shop() {
+  await say('Welkom in de winkel! Wat mag het zijn?');
+  const goods = [['bal', 200], ['drank', 300]];
+  UI.under = () => { box(0, 0, 112, 24); text('GELD ' + G.money, 8, 8); };
+  while (true) {
+    const i = await choose(goods.map(([k, p]) => ITEMN[k].padEnd(10) + ' ' + p), { x: 0, y: 24, w: 160 });
+    if (i < 0) break;
+    const [k, p] = goods[i];
+    if (G.money < p) { await say('Sorry, daar heb je niet genoeg geld voor.'); continue; }
+    G.money -= p; G.items[k]++; sfx('item');
+    await say('Je koopt een ' + ITEMN[k] + '. Bedankt!');
+  }
+  UI.under = null;
+  await say('Kom snel nog eens terug!');
+}
+async function pickStarter(sp) {
+  if (G.flags.starter) { await say('Dat is de laatste VIBEMON van PROF. LINDE. Laat maar liggen.'); return; }
+  const S = SPECIES[sp];
+  UI.pic = sp;
+  const i = await ask('Dit is ' + S.name + ', een ' + S.type + '-monster. Kies je ' + S.name + '?');
+  UI.pic = null;
+  if (i !== 0) return;
+  G.party.push(makeMon(sp, 5)); G.flags.starter = sp; G.caught = 1; sfx('caught');
+  await say('Je hebt ' + S.name + ' gekregen!');
+  const rsp = COUNTER[sp], R2 = SPECIES[rsp], bas = ent('rival');
+  bas.dir = 'up';
+  await say('BAS: Dan neem ik deze! ' + R2.name + '!');
+  G.flags.rivalSp = rsp; sfx('item');
+  await say('BAS heeft ' + R2.name + ' gekregen!');
+  bas.dir = OPP[G.dir === 'up' ? 'down' : G.dir];
+  await say('BAS: Wacht eens even! Laten we onze VIBEMON testen. Kom op!');
+  await battle({ trainer: { name: 'BAS', look: 'rival', party: [[rsp, 5]], money: 100, canLose: true,
+    winText: 'BAS: Wat?! Ik had de verkeerde gekozen!', loseText: 'BAS: Yes! Ik ben gewoon de beste!' } });
+  healAll();
+  await say('PROF. LINDE: Wat een gevecht! Hier, neem deze vijf MONSTERBALLEN en twee DRANKJES mee.');
+  G.items.bal += 5; G.items.drank += 2; sfx('item');
+  await say('Je krijgt 5 MONSTERBALLEN en 2 DRANKJES!');
+  await say('PROF. LINDE: In het hoge gras leven wilde VIBEMON. Maak ze eerst moe en gooi dan een MONSTERBAL!');
+  await say('In VIBESTAD, ten noorden van ROUTE 1, woont arenaleider BRAM. Versla BRAM en word een echte meester!');
+  await say('BAS: Ik ga alvast trainen. Tot later, slome!');
+  await fade(1); G.flags.rivalGone = true; G.flags.ready = true; await fade(0);
+}
+async function bramWin() {
+  await say('BRAM: Hier, de KEIBADGE. Die heb je echt verdiend!');
+  sfx('win'); G.flags.badge = true;
+  await say('Je hebt de KEIBADGE gekregen!');
+  await fade(1); G.scene = 'ending'; music('title'); await fade(0);
+  await say('GEFELICITEERD! Je hebt BRAM verslagen en de KEIBADGE gewonnen!');
+  await say('Je bent een echte VIBEMON-MEESTER!');
+  await say('Bedankt voor het spelen! Je kunt gewoon verder spelen en meer monsters vangen.');
+  await fade(1); G.scene = 'world'; music(MAPS[G.map].music); await fade(0);
+}
+
+/* ---------- menus outside battle ---------- */
+function drawParty(m) {
+  R(0, 0, 160, 144, 0);
+  G.party.forEach((mon, i) => {
+    const y = i * 24, s = stats(mon);
+    if (i === m.i) cursor(4, y + 3);
+    text(nm(mon), 16, y + 3);
+    text('Lv' + mon.lv, 120, y + 3);
+    if (mon.hp > 0) hpbar(16, y + 14, 64, mon.hp / s.hp); else text('KO', 16, y + 13, 2);
+    text(mon.hp + '/' + s.hp, 88, y + 13);
+    R(0, y + 23, 160, 1, 1);
+  });
+}
+const partyScreen = (o = {}) => choose(G.party.map(nm), { draw: drawParty, cancel: !o.forced, start: o.start || 0 });
+function drawStats(mon, page) {
+  R(0, 0, 160, 144, 0);
+  const s = stats(mon), S = SPECIES[mon.sp];
+  if (page === 0) {
+    ctx.drawImage(SPR[mon.sp].front, 4, 4);
+    text(S.name, 52, 6); text('Lv' + mon.lv, 52, 18); text(S.type, 52, 30, 2);
+    hpbar(52, 44, 64, mon.hp / s.hp); text(mon.hp + '/' + s.hp, 52, 54);
+    R(4, 64, 152, 1, 1);
+    [['AANVAL', s.atk], ['VERDEDIG', s.def], ['SNELHEID', s.spd]].forEach(([k, v], i) => { text(k, 8, 72 + i * 12); text(String(v).padStart(3), 120, 72 + i * 12); });
+    text('XP ' + mon.xp, 8, 112);
+    text('Nog ' + (xpFor(mon.lv + 1) - mon.xp) + ' tot Lv' + (mon.lv + 1), 8, 126, 2);
+  } else {
+    text('AANVALLEN', 8, 6);
+    mon.moves.forEach((mv, i) => { const M = MOVES[mv.id], y = 24 + i * 28; text(M.name, 16, y); text(M.type, 16, y + 10, 2); text('PP ' + mv.pp + '/' + M.pp, 88, y + 10, 2); });
+  }
+}
+async function showStats(mon) {
+  for (let p = 0; p < 2; p++) { const r = await choose([''], { draw: () => drawStats(mon, p) }); if (r < 0) return; }
+}
+async function partyWorld() {
+  let start = 0;
+  while (true) {
+    const i = await partyScreen({ start });
+    if (i < 0) return;
+    start = i;
+    UI.under = () => drawParty({ i });
+    const j = await choose(['STATS', 'VOOROP', 'TERUG']);
+    UI.under = null;
+    if (j === 0) await showStats(G.party[i]);
+    else if (j === 1 && i > 0) { const [m] = G.party.splice(i, 1); G.party.unshift(m); start = 0; await say(nm(m) + ' loopt nu voorop!'); }
+  }
+}
+async function bagMenu(inBattle) {
+  const keysB = ['bal', 'drank'];
+  const i = await choose(keysB.map(k => ITEMN[k].padEnd(10) + ' x' + G.items[k]), { x: 16, y: 24, w: 144 });
+  if (i < 0) return null;
+  const k = keysB[i];
+  if (G.items[k] <= 0) { await say('Je hebt geen ' + ITEMN[k] + ' meer!'); return null; }
+  if (k === 'bal') {
+    if (!inBattle) { await say('Dat kan hier niet. Gebruik hem in een gevecht!'); return null; }
+    if (!B.wild) { await say('Je kunt geen monster van een trainer vangen!'); return null; }
+    if (G.party.length + G.box.length >= 30) { await say('Je hebt geen plek meer!'); return null; }
+    return { t: 'ball' };
+  }
+  const t = await partyScreen();
+  if (t < 0) return null;
+  const m = G.party[t];
+  if (m.hp <= 0 || m.hp >= stats(m).hp) { await say('Dat heeft geen effect.'); return null; }
+  if (inBattle) return { t: 'drank', target: t };
+  await useDrank(t);
+  return null;
+}
+async function useDrank(t) {
+  const m = G.party[t], max = stats(m).hp, heal = Math.min(20, max - m.hp);
+  G.items.drank--; m.hp += heal; sfx('heal');
+  if (B && t === B.mi) await tween(B, 'hpP', m.hp, 400);
+  await say(nm(m) + ' krijgt ' + heal + ' HP terug!');
+}
+async function startMenu() {
+  while (true) {
+    const i = await choose(['MONSTERS', 'TAS', 'SPELER', 'OPSLAAN', 'SLUIT'], { y: 0, start: G.menuIdx || 0 });
+    if (i < 0 || i === 4) return;
+    G.menuIdx = i;
+    if (i === 0) { if (!G.party.length) await say('Je hebt nog geen monsters!'); else await partyWorld(); }
+    else if (i === 1) await bagMenu(false);
+    else if (i === 2) await say('Geld: ' + G.money + ' munten\nBadges: ' + (G.flags.badge ? 1 : 0) + '\nGevangen: ' + G.caught + ' monsters');
+    else if (i === 3) { const ok = save(); sfx(ok ? 'item' : 'bump'); await say(ok ? 'Het spel is opgeslagen!' : 'Opslaan lukt niet in deze browser.'); return; }
+  }
+}
+
+/* ---------- battle ---------- */
+const st0 = () => ({ atk: 0, def: 0, spd: 0 });
+const mul = s => s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
+const enemyName = m => (B.wild ? 'Wilde ' : 'Vijandige ') + nm(m);
+const STATN = { atk: 'AANVAL', def: 'VERDEDIGING', spd: 'SNELHEID' };
+
+async function battle(o) {
+  const before = curSong;
+  music(o.trainer && o.trainer.leader ? 'leader' : 'battle');
+  for (let i = 0; i < 3; i++) { G.flash = true; await wait(70); G.flash = false; await wait(70); }
+  await tween(G, 'wipe', 1, 450);
+  const ep = o.wild ? [o.wild] : o.trainer.party.map(([s, l]) => makeMon(s, l));
+  B = { wild: !!o.wild, tr: o.trainer, ep, ei: 0, mi: Math.max(0, G.party.findIndex(m => m.hp > 0)),
+    eX: -100, pX: 100, eY: 0, pY: 0, eShow: !!o.wild, trShow: !o.wild, heroShow: true, pShow: false,
+    blinkE: false, blinkP: false, ball: null, stE: st0(), stP: st0(), runs: 0, hpE: ep[0].hp, hpP: 0 };
+  G.scene = 'battle'; G.wipe = 0;
+  await Promise.all([tween(B, 'eX', 0, 700), tween(B, 'pX', 0, 700)]);
+  if (B.wild) await say('Een wilde ' + nm(ep[0]) + ' verschijnt!');
+  else {
+    await say(B.tr.name + ' wil vechten!');
+    await tween(B, 'eX', 90, 300); B.trShow = false; B.eX = 0; B.eShow = true; sfx('ball');
+    await say(B.tr.name + ' stuurt ' + nm(ep[0]) + ' in!');
+  }
+  await tween(B, 'pX', -90, 300); B.heroShow = false; B.pX = 0;
+  await sendOut(B.mi);
+
+  let result = null;
+  while (!result) {
+    const me = G.party[B.mi];
+    const a = await choose(['VECHT', 'TAS', 'MONST', 'WEG'], { x: 64, y: 96, w: 96, h: 48, cols: 2, colW: 48, cancel: false });
+    let act = null;
+    if (a === 0) { const k = await moveMenu(me); if (k === -1) continue; act = { t: 'move', k }; }
+    else if (a === 1) { act = await bagMenu(true); if (!act) continue; }
+    else if (a === 2) {
+      const i = await partyScreen({ start: B.mi });
+      if (i < 0) continue;
+      if (i === B.mi) { await say(nm(me) + ' vecht al!'); continue; }
+      if (G.party[i].hp <= 0) { await say(nm(G.party[i]) + ' kan niet meer vechten!'); continue; }
+      act = { t: 'switch', i };
+    } else {
+      if (!B.wild) { await say('Je kunt niet vluchten uit een trainersgevecht!'); continue; }
+      act = { t: 'run' };
+    }
+    result = await doTurn(act);
+  }
+
+  let blackout = false;
+  if (result === 'win') {
+    sfx('win');
+    if (B.tr) {
+      B.eX = 90; B.trShow = true; await tween(B, 'eX', 0, 300);
+      await say('Je hebt ' + B.tr.name + ' verslagen!');
+      if (B.tr.winText) await say(B.tr.winText);
+      G.money += B.tr.money; await say('Je krijgt ' + B.tr.money + ' munten!');
+    }
+  } else if (result === 'lose') {
+    if (B.tr && B.tr.canLose) { B.trShow = true; B.eShow = false; B.eX = 0; if (B.tr.loseText) await say(B.tr.loseText); }
+    else { await say('Je hebt geen fitte monsters meer!'); await say('Alles wordt zwart...'); blackout = true; }
+  }
+  await fade(1);
+  B = null; G.scene = 'world';
+  if (blackout) {
+    healAll(); G.money = Math.floor(G.money / 2);
+    resetEnts();
+    enterMap(G.heal.map, G.heal.x, G.heal.y, G.heal.dir);
+  } else music(MAPS[G.map].music || before);
+  await fade(0);
+  if (blackout) await say('Je bent snel naar een veilige plek gebracht. Je monsters zijn weer opgeknapt.');
+  return result;
+}
+async function sendOut(i) {
+  B.mi = i; B.stP = st0(); B.hpP = G.party[i].hp;
+  await say('Ga, ' + nm(G.party[i]) + '!');
+  sfx('ball'); B.pShow = true;
+}
+function drawMoves(m) {
+  const me = G.party[B.mi], mv = me.moves[m.i], M = MOVES[mv.id];
+  box(0, 62, 80, 28); text(M.type, 8, 69); text('PP ' + mv.pp + '/' + M.pp, 8, 79);
+  box(0, 88, 160, 56);
+  m.items.forEach((s, i) => text(s, 16, 97 + i * 11));
+  cursor(7, 97 + m.i * 11);
+}
+async function moveMenu(me) {
+  while (true) {
+    const k = await choose(me.moves.map(x => MOVES[x.id].name), { draw: drawMoves });
+    if (k < 0) return -1;
+    if (me.moves.every(x => x.pp <= 0)) { await say(nm(me) + ' heeft geen PP meer en worstelt maar wat!'); return -2; }
+    if (me.moves[k].pp <= 0) { await say('Geen PP meer voor deze aanval!'); continue; }
+    return k;
+  }
+}
+function pickEnemyMove(m) {
+  const ids = m.moves.map(x => x.id);
+  if (!B.wild && rnd() < 0.5) {
+    const tgt = SPECIES[G.party[B.mi].sp].type;
+    let best = ids[0], bv = -1;
+    for (const id of ids) { const M = MOVES[id], v = M.pow ? M.pow * eff(M.type, tgt) : 15; if (v > bv) { bv = v; best = id; } }
+    return best;
+  }
+  return ids[Math.floor(rnd() * ids.length)];
+}
+const spdOf = (m, st) => stats(m).spd * mul(st.spd);
+async function doTurn(act) {
+  const eMove = pickEnemyMove(B.ep[B.ei]);
+  if (act.t === 'move') {
+    const ref = act.k >= 0 ? G.party[B.mi].moves[act.k] : null, pid = ref ? ref.id : 'beuk';
+    const pp = MOVES[pid].prio || 0, ep = MOVES[eMove].prio || 0;
+    const ps = spdOf(G.party[B.mi], B.stP), es = spdOf(B.ep[B.ei], B.stE);
+    const pFirst = pp !== ep ? pp > ep : ps !== es ? ps > es : rnd() < 0.5;
+    for (const side of pFirst ? ['p', 'e'] : ['e', 'p']) {
+      if (side === 'p') await attack('p', pid, ref); else await attack('e', eMove);
+      const r = await checkFaint(); if (r !== undefined) return r;
+    }
+    return null;
+  }
+  if (act.t === 'run') {
+    B.runs++;
+    const ps = spdOf(G.party[B.mi], B.stP), es = spdOf(B.ep[0], B.stE);
+    if (ps >= es || rnd() < 0.4 + 0.2 * B.runs) { sfx('flee'); await say('Je bent veilig ontsnapt!'); return 'run'; }
+    await say('Ontsnappen mislukt!');
+  } else if (act.t === 'switch') {
+    await say('Kom terug, ' + nm(G.party[B.mi]) + '!'); B.pShow = false; await wait(250); await sendOut(act.i);
+  } else if (act.t === 'ball') { if (await throwBall()) return 'caught'; }
+  else if (act.t === 'drank') await useDrank(act.target);
+  await attack('e', eMove);
+  const r = await checkFaint();
+  return r === undefined ? null : r;
+}
+async function blink(who) { for (let i = 0; i < 3; i++) { B['blink' + who] = true; await wait(70); B['blink' + who] = false; await wait(70); } }
+async function attack(side, id, ref) {
+  const A = side === 'p' ? G.party[B.mi] : B.ep[B.ei], D = side === 'p' ? B.ep[B.ei] : G.party[B.mi];
+  const sA = side === 'p' ? B.stP : B.stE, sD = side === 'p' ? B.stE : B.stP;
+  const aName = side === 'p' ? nm(A) : enemyName(A), dName = side === 'p' ? enemyName(D) : nm(D);
+  const M = MOVES[id];
+  if (ref) ref.pp--;
+  await say(aName + ' gebruikt ' + M.name + '!');
+  if (rnd() * 100 >= M.acc) { await say('Maar het mist!'); return; }
+  if (M.fx) {
+    const [who, stat, dv] = M.fx, tgt = who === 'self' ? sA : sD, tn = who === 'self' ? aName : dName;
+    if ((dv < 0 && tgt[stat] <= -6) || (dv > 0 && tgt[stat] >= 6)) { await say('Er gebeurt niets!'); return; }
+    tgt[stat] += dv; sfx(dv < 0 ? 'down' : 'up');
+    await say('De ' + STATN[stat] + ' van ' + tn + (dv > 0 ? ' stijgt!' : ' daalt!'));
+    return;
+  }
+  const e = eff(M.type, SPECIES[D.sp].type), crit = rnd() < 1 / 16;
+  const atk = stats(A).atk * mul(sA.atk), def = stats(D).def * mul(sD.def);
+  let dmg = Math.floor(Math.floor((Math.floor(2 * A.lv / 5) + 2) * M.pow * atk / def) / 50) + 2;
+  if (M.type === SPECIES[A.sp].type) dmg *= 1.5;
+  dmg *= e; if (crit) dmg *= 2;
+  dmg = Math.max(1, Math.floor(dmg * (217 + rnd() * 39) / 255));
+  sfx(e > 1 || crit ? 'hit2' : 'hit');
+  await blink(side === 'p' ? 'E' : 'P');
+  D.hp = Math.max(0, D.hp - dmg);
+  await tween(B, side === 'p' ? 'hpE' : 'hpP', D.hp, 250 + Math.min(600, dmg * 25));
+  if (crit) await say('Een voltreffer!');
+  if (e > 1) await say('Het is super effectief!');
+  else if (e < 1) await say('Het is niet erg effectief...');
+}
+async function checkFaint() {
+  const en = B.ep[B.ei], me = G.party[B.mi];
+  if (en.hp <= 0) {
+    sfx('faint'); await tween(B, 'eY', 44, 400); B.eShow = false; B.eY = 0;
+    await say(enemyName(en) + ' is uitgeschakeld!');
+    await giveXp(en);
+    const next = B.ep.findIndex(m => m.hp > 0);
+    if (next < 0) return 'win';
+    B.ei = next; B.stE = st0(); B.hpE = B.ep[next].hp;
+    await say(B.tr.name + ' stuurt ' + nm(B.ep[next]) + ' in!');
+    sfx('ball'); B.eShow = true;
+    return null;
+  }
+  if (me.hp <= 0) {
+    sfx('faint'); await tween(B, 'pY', 44, 400); B.pShow = false; B.pY = 0;
+    await say(nm(me) + ' is uitgeschakeld!');
+    if (!G.party.some(m => m.hp > 0)) return 'lose';
+    let i;
+    while (true) { i = await partyScreen({ forced: true }); if (G.party[i].hp > 0) break; await say('Die kan niet meer vechten!'); }
+    await sendOut(i);
+    return null;
+  }
+}
+async function giveXp(en) {
+  const me = G.party[B.mi];
+  if (me.hp <= 0) return;
+  const gain = Math.max(1, Math.floor(SPECIES[en.sp].xp * en.lv / 5 * (B.wild ? 1 : 1.5)));
+  await say(nm(me) + ' krijgt ' + gain + ' XP!');
+  me.xp += gain;
+  while (me.lv < 100 && me.xp >= xpFor(me.lv + 1)) {
+    const old = stats(me).hp; me.lv++; me.hp += stats(me).hp - old; B.hpP = me.hp;
+    sfx('lvl'); await say(nm(me) + ' is nu level ' + me.lv + '!');
+    for (const [l, id] of SPECIES[me.sp].learn) if (l === me.lv) await learnMove(me, id);
+  }
+}
+async function learnMove(mon, id) {
+  if (mon.moves.some(x => x.id === id)) return;
+  const N = nm(mon), M = MOVES[id];
+  if (mon.moves.length < 4) { mon.moves.push({ id, pp: M.pp }); sfx('item'); await say(N + ' leert ' + M.name + '!'); return; }
+  await say(N + ' wil ' + M.name + ' leren, maar kent al vier aanvallen.');
+  if (await ask('Een aanval vergeten voor ' + M.name + '?') === 0) {
+    const j = await choose(mon.moves.map(x => MOVES[x.id].name));
+    if (j >= 0) {
+      const old = MOVES[mon.moves[j].id].name;
+      mon.moves[j] = { id, pp: M.pp }; sfx('item');
+      await say('1, 2 en... poef! ' + N + ' vergeet ' + old + ' en leert ' + M.name + '!');
+      return;
+    }
+  }
+  await say(N + ' leert ' + M.name + ' niet.');
+}
+async function throwBall() {
+  G.items.bal--;
+  await say('Je gooit een MONSTERBAL!');
+  B.ball = { t: 0, shake: 0 }; sfx('throw');
+  await tween(B.ball, 't', 1, 450);
+  sfx('ball'); B.eShow = false; await wait(300);
+  const en = B.ep[0], M = stats(en).hp, rate = SPECIES[en.sp].rate;
+  const p = Math.min(1, ((3 * M - 2 * en.hp) * rate) / (3 * M * 255) + 0.04);
+  const caught = rnd() < p, shakes = caught ? 3 : Math.min(2, Math.floor(rnd() * 3 * (0.4 + p)));
+  for (let i = 0; i < shakes; i++) {
+    sfx('shake'); await tween(B.ball, 'shake', 1, 120); await tween(B.ball, 'shake', -1, 160); await tween(B.ball, 'shake', 0, 100); await wait(350);
+  }
+  if (caught) {
+    sfx('caught'); G.caught++;
+    await say('Gelukt! ' + nm(en) + ' is gevangen!');
+    if (G.party.length < 6) G.party.push(en);
+    else { G.box.push(en); await say(nm(en) + ' is naar de opslag gestuurd.'); }
+    return true;
+  }
+  B.ball = null; B.eShow = true;
+  await say(['Oh nee! Het monster brak los!', 'Ahh! Bijna gevangen!', 'Verdorie! Het scheelde zo weinig!'][shakes]);
+  return false;
+}
+function drawBattle() {
+  R(0, 0, 160, 144, 0);
+  ctx.drawImage(PLATFORM, 102, 36); ctx.drawImage(PLATFORM, 6, 84);
+  const en = B.ep[B.ei], me = G.party[B.mi];
+  if (B.trShow) big(PEOPLE[B.tr.look].down[0], 116 + Math.round(B.eX), 4, 2);
+  else if (B.eShow && !B.blinkE) { ctx.save(); ctx.beginPath(); ctx.rect(100, 0, 60, 46); ctx.clip(); ctx.drawImage(SPR[en.sp].front, 112 + Math.round(B.eX), 4 + Math.round(B.eY)); ctx.restore(); }
+  if (B.heroShow) big(PEOPLE.hero.up[0], 20 + Math.round(B.pX), 60, 2);
+  else if (B.pShow && !B.blinkP && me) { ctx.save(); ctx.beginPath(); ctx.rect(0, 40, 80, 54); ctx.clip(); ctx.drawImage(SPR[me.sp].back, 16 + Math.round(B.pX), 52 + Math.round(B.pY)); ctx.restore(); }
+  if (B.ball) {
+    const t = B.ball.t, bx = 40 + 88 * t + B.ball.shake * 2, by = 78 - 46 * t - Math.sin(Math.PI * t) * 30;
+    ctx.drawImage(BALL8, Math.round(bx), Math.round(by));
+  }
+  if (!B.trShow && (B.eShow || B.ball)) {
+    text(nm(en), 8, 4); text('Lv' + en.lv, 40, 14);
+    text('HP', 8, 23, 2); hpbar(26, 24, 50, B.hpE / stats(en).hp);
+    R(6, 32, 76, 1, 3); R(81, 22, 1, 11, 3);
+  }
+  if (B.pShow && me) {
+    const s = stats(me);
+    text(nm(me), 72, 56); text('Lv' + me.lv, 112, 66);
+    text('HP', 72, 75, 2); hpbar(90, 76, 56, B.hpP / s.hp);
+    text((Math.ceil(B.hpP) + '/' + s.hp).padStart(7), 88, 85);
+    R(155, 66, 1, 28, 3); R(70, 93, 86, 1, 3);
+  }
+  box(0, 96, 160, 48);
+}
+
+/* ---------- title / intro / ending ---------- */
+const TITLE_MONS = ['vonkvos', 'druppelpad', 'kiemkop', 'zoemzap', 'tsjilp', 'keisteen', 'piepmuis', 'rotsreus', 'rupsje'];
+function drawTitle() {
+  R(0, 0, 160, 144, 0);
+  text('VIBEMON', 25, 13, 1, 16); text('VIBEMON', 24, 12, 3, 16);
+  R(16, 32, 128, 2, 3);
+  text('GROENE EDITIE', 28, 40, 2);
+  const i = Math.floor(T / 2.4) % TITLE_MONS.length, t = (T / 2.4) % 1;
+  const x = 60 + (t < 0.12 ? (0.12 - t) * 500 : t > 0.9 ? (0.9 - t) * 600 : 0);
+  ctx.drawImage(PLATFORM, 50, 86);
+  ctx.drawImage(SPR[TITLE_MONS[i]].front, Math.round(x), 54);
+  if (!UI.menu && Math.floor(T * 2) % 2) text('DRUK OP START', 28, 112);
+  text('VIBE CODED 2026', 20, 132, 1);
+}
+function drawIntro() { R(0, 0, 160, 144, 0); ctx.drawImage(PLATFORM, 50, 74); big(PEOPLE.prof.down[0], 56, 30, 3); }
+function drawEnding() {
+  R(0, 0, 160, 144, 0);
+  text('KEIBADGE', 48, 8, 3);
+  const s = SPR[G.party[0] ? G.party[0].sp : 'vonkvos'].front;
+  ctx.drawImage(PLATFORM, 50, 74);
+  ctx.drawImage(s, 60, 38 + Math.round(Math.abs(Math.sin(T * 4)) * -6));
+  for (let k = 0; k < 6; k++) { const a = T * 1.5 + k; R(Math.round(80 + Math.cos(a) * 60), Math.round(52 + Math.sin(a * 1.3) * 34), 2, 2, k % 2 ? 1 : 2); }
+}
+async function titleScreen() {
+  G.scene = 'title'; music('title');
+  await waitKey(['a', 'start']);
+  sfx('sel');
+  const sv = loadSave();
+  if (sv) {
+    const i = await choose(['NIEUW SPEL', 'DOORGAAN'], { x: 16, y: 96, w: 128, cancel: false, start: 1 });
+    if (i === 1) {
+      await fade(1);
+      Object.assign(G, sv, { scene: 'world', busy: true, mv: null });
+      resetEnts(); enterMap(G.map, G.x, G.y, G.dir);
+      await fade(0);
+      return;
+    }
+  }
+  await fade(1);
+  const muted = G.muted; G = freshState(); G.muted = muted; G.busy = true; G.fade = 1; G.scene = 'intro';
+  resetEnts(); music('center');
+  await fade(0);
+  await say('Hallo daar! Welkom in de wereld van VIBEMON!');
+  await say('Ik ben PROF. LINDE. Iedereen hier noemt mij de MONSTER-PROF.');
+  await say('Deze wereld zit vol met wezens die VIBEMON heten.');
+  await say('Sommige mensen houden ze als huisdier. Anderen laten ze vechten in spannende gevechten.');
+  await say('En jij? Jouw avontuur begint vandaag! Kom straks naar mijn LAB in DENNENDORP.');
+  await fade(1);
+  G.scene = 'world'; enterMap('house', 3, 5, 'down');
+  await fade(0);
+}
+
+/* ---------- save ---------- */
+const SAVE_KEY = 'vibemon-groen-v1';
+function save() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ map: G.map, x: G.x, y: G.y, dir: G.dir, party: G.party, box: G.box, items: G.items, money: G.money, flags: G.flags, heal: G.heal, caught: G.caught }));
+    return true;
+  } catch (e) { return false; }
+}
+function loadSave() { try { const s = localStorage.getItem(SAVE_KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+
+/* ---------- main loop ---------- */
+function update(dt) {
+  updTimers(dt);
+  if (G.bumpT > 0) G.bumpT -= dt;
+  if (G.loc && G.loc.t > 0) G.loc.t -= dt;
+  if (G.scene === 'world') { updMove(dt); updEnts(dt); }
+  if (UI.menu) updMenu();
+  else if (UI.text) updText(dt);
+  else if (UI.wait) { if (UI.wait.ks.some(k => hit(k))) { const r = UI.wait.r; UI.wait = null; r(); } }
+  else if (G.scene === 'world' && !G.busy && !G.mv) worldInput(dt);
+}
+function render() {
+  ctx.setTransform(SC, 0, 0, SC, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.textBaseline = 'top';
+  if (G.scene === 'title') drawTitle();
+  else if (G.scene === 'intro') drawIntro();
+  else if (G.scene === 'ending') drawEnding();
+  else if (G.scene === 'battle' && B) drawBattle();
+  else drawWorld();
+  if (UI.pic) { box(24, 8, 56, 56); ctx.drawImage(SPR[UI.pic].front, 32, 16); }
+  if (UI.under) UI.under();
+  drawTextBox();
+  if (UI.menu) drawMenu(UI.menu);
+  if (G.wipe > 0) for (let i = 0; i < 9; i++) { const w = Math.round(G.wipe * 160); if (i % 2) R(160 - w, i * 16, w, 16, 3); else R(0, i * 16, w, 16, 3); }
+  if (G.flash) { ctx.globalAlpha = 0.85; R(0, 0, 160, 144, 3); ctx.globalAlpha = 1; }
+  if (G.fade > 0) { ctx.globalAlpha = [0, 0.4, 0.75, 1][Math.min(3, Math.floor(G.fade * 3.999))]; R(0, 0, 160, 144, 0); ctx.globalAlpha = 1; }
+}
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; T += dt;
+  update(dt); render(); pressed.clear();
+  requestAnimationFrame(loop);
+}
+function boot() { run(titleScreen); requestAnimationFrame(loop); }
+let booted = false;
+const go = () => { if (!booted) { booted = true; boot(); } };
+if (document.fonts && document.fonts.load) { document.fonts.load("8px 'Press Start 2P'").then(go, go); setTimeout(go, 1500); } else go();
+</script>
+</body>
+</html>
